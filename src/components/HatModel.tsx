@@ -33,7 +33,7 @@ function makeTextTexture(
       ? (maxLen > 12 ? 160 : maxLen > 8 ? 200 : 240)
       : (maxLen > 10 ? 140 : 180);
 
-  const fontStr = `900 ${fontSize}px "Times New Roman", "Georgia", serif`;
+  const fontStr = `900 ${fontSize}px "Bodoni Moda", "Times New Roman", serif`;
   ctx.font = fontStr;
 
   // Measure and scale down if needed
@@ -43,7 +43,7 @@ function makeTextTexture(
     fontSize = Math.floor(fontSize * (c.width * 0.85) / measured);
   }
 
-  const finalFont = `900 ${fontSize}px "Times New Roman", "Georgia", serif`;
+  const finalFont = `900 ${fontSize}px "Bodoni Moda", "Times New Roman", serif`;
   const dy = fontSize * 1.15;
   const y0 = c.height * 0.5 - ((lineCount - 1) * dy) / 2;
 

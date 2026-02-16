@@ -13,13 +13,16 @@ import MGCollection from "./pages/MGCollection";
 
 const queryClient = new QueryClient();
 
+// Use import.meta.env.BASE_URL so react-router matches the vite base path
+const basename = import.meta.env.BASE_URL.replace(/\/$/, '');
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <CartProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter basename={basename}>
           <Navbar />
           <Routes>
             <Route path="/" element={<Index />} />

@@ -41,7 +41,8 @@
   }
   body {
     @apply bg-black text-white;
-    font-family: 'Times New Roman', 'Georgia', serif;
+    font-family: "Bodoni Moda", serif;
+    font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
