@@ -18,6 +18,8 @@ interface HatModelProps {
   autoRotate?: boolean;
 }
 
+const MODEL_PATH = '/models/baseball_cap.glb';
+
 function makeTextTexture(
   lines: string[],
   textColor: string,
@@ -71,6 +73,7 @@ function makeTextTexture(
   return tex;
 }
 
+// Curved plane that wraps around the front of the cap
 function createCurvedPlane(
   width: number,
   height: number,
@@ -90,7 +93,7 @@ function createCurvedPlane(
     const newZ = Math.cos(angle) * radius - radius;
 
     const ny = py / (height * 0.5);
-    const dome = 0.15 * radius * (1 - ny * ny * 0.3);
+    const dome = 0.12 * radius * (1 - ny * ny * 0.3);
 
     pos.setXYZ(i, newX, py, newZ + dome);
   }
@@ -106,36 +109,31 @@ function makeLidTexture(renderer: THREE.WebGLRenderer, globeImg: HTMLImageElemen
   c.height = 512;
   const ctx = c.getContext('2d')!;
 
-  // Dark background for inside lid
-  ctx.fillStyle = '#111';
+  ctx.fillStyle = '#1a1a1a';
   ctx.fillRect(0, 0, c.width, c.height);
 
-  // Draw globe image centered
   if (globeImg) {
-    const imgSize = 200;
+    const imgSize = 180;
     const ix = (c.width - imgSize) / 2;
-    const iy = 80;
-    ctx.globalAlpha = 0.7;
-    ctx.drawImage(globeImg, ix, iy, imgSize, imgSize);
+    ctx.globalAlpha = 0.6;
+    ctx.drawImage(globeImg, ix, 80, imgSize, imgSize);
     ctx.globalAlpha = 1;
   }
 
-  // Khmer script: "មេហ្គា" (MEGA) + tagline
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#666';
-  ctx.font = '32px serif';
-  ctx.fillText('មេហ្គា', c.width / 2, 320);
 
-  // Small "MEGA" latin text
+  ctx.fillStyle = '#555';
+  ctx.font = '28px serif';
+  ctx.fillText('មេហ្គា', c.width / 2, 310);
+
   ctx.fillStyle = '#444';
-  ctx.font = '600 14px "Bodoni Moda", serif';
-  ctx.fillText('MEGA', c.width / 2, 360);
+  ctx.font = '600 12px "Bodoni Moda", serif';
+  ctx.fillText('MEGA', c.width / 2, 345);
 
-  // Khmer tagline: "ធ្វើឱ្យផែនដីអស្ចារ្យម្ដងទៀត"
   ctx.fillStyle = '#333';
-  ctx.font = '16px serif';
-  ctx.fillText('ធ្វើឱ្យផែនដីអស្ចារ្យម្ដងទៀត', c.width / 2, 400);
+  ctx.font = '14px serif';
+  ctx.fillText('ធ្វើឱ្យផែនដីអស្ចារ្យម្ដងទៀត', c.width / 2, 385);
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -146,6 +144,9 @@ function makeLidTexture(renderer: THREE.WebGLRenderer, globeImg: HTMLImageElemen
   tex.needsUpdate = true;
   return tex;
 }
+
+// Fabric material names from the GLB that should be recolored
+const FABRIC_MATERIALS = new Set(['baseballCap']);
 
 export default function HatModel({
   hatColor,
@@ -161,7 +162,7 @@ export default function HatModel({
 }: HatModelProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { gl } = useThree();
-  const { scene: gltfScene } = useGLTF('/models/cap.glb');
+  const { scene: gltfScene } = useGLTF(MODEL_PATH);
 
   const hatTexture = texture ? useLoader(THREE.TextureLoader, texture) : null;
   if (hatTexture) {
@@ -194,6 +195,7 @@ export default function HatModel({
     };
   }, [capMesh]);
 
+  // Normalize so hat fills ~1.6 units
   const displayScale = useMemo(() => {
     const maxDim = Math.max(size.x, size.y, size.z);
     return maxDim > 0 ? 1.6 / maxDim : 1;
@@ -215,48 +217,65 @@ export default function HatModel({
     return makeLidTexture(gl, globeImgRef.current);
   }, [gl]);
 
-  // Text planes sized relative to hat
-  const frontW = size.x * 0.72;
-  const frontH = size.y * 0.42;
-  const frontGeo = useMemo(() => createCurvedPlane(frontW, frontH, size.x * 0.48), [frontW, frontH, size.x]);
+  // Text planes sized relative to hat bounding box
+  const frontW = size.x * 0.65;
+  const frontH = size.y * 0.35;
+  const frontR = size.x * 0.45;
+  const frontGeo = useMemo(() => createCurvedPlane(frontW, frontH, frontR), [frontW, frontH, frontR]);
 
-  const backW = size.x * 0.55;
-  const backH = size.y * 0.32;
-  const backGeo = useMemo(() => createCurvedPlane(backW, backH, size.x * 0.44), [backW, backH, size.x]);
+  const backW = size.x * 0.50;
+  const backH = size.y * 0.28;
+  const backR = size.x * 0.40;
+  const backGeo = useMemo(() => createCurvedPlane(backW, backH, backR), [backW, backH, backR]);
 
-  // Apply hat color/texture to all meshes - force opaque
+  // Apply hat color to fabric meshes, keep hardware parts (plastic, metal) original
   useEffect(() => {
     capMesh.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        const mesh = child as THREE.Mesh;
-        const applyMaterial = (m: THREE.Material) => {
+      if (!(child as THREE.Mesh).isMesh) return;
+      const mesh = child as THREE.Mesh;
+
+      const remat = (m: THREE.Material) => {
+        const orig = m as THREE.MeshStandardMaterial;
+        const isFabric = FABRIC_MATERIALS.has(orig.name || m.name || '');
+
+        if (isFabric) {
           const mat = new THREE.MeshStandardMaterial();
           mat.color.set(hatColor);
           if (hatTexture) {
             mat.map = hatTexture;
             mat.color.set('#ffffff');
           }
-          mat.roughness = 0.7;
-          mat.metalness = 0.1;
+          mat.roughness = 0.75;
+          mat.metalness = 0.05;
           mat.transparent = false;
           mat.opacity = 1;
           mat.depthWrite = true;
           mat.side = THREE.FrontSide;
           mat.needsUpdate = true;
           return mat;
-        };
-        if (Array.isArray(mesh.material)) {
-          mesh.material = mesh.material.map(applyMaterial);
-        } else {
-          mesh.material = applyMaterial(mesh.material);
         }
+
+        // Non-fabric: keep original but ensure opaque
+        const mat = orig.clone();
+        mat.transparent = false;
+        mat.opacity = 1;
+        mat.depthWrite = true;
+        mat.needsUpdate = true;
+        return mat;
+      };
+
+      if (Array.isArray(mesh.material)) {
+        mesh.material = mesh.material.map(remat);
+      } else {
+        mesh.material = remat(mesh.material);
       }
     });
   }, [capMesh, hatColor, hatTexture]);
 
-  const textY = center.y + size.y * 0.06;
-  const frontZ = center.z + size.z * 0.38;
-  const backZ = center.z - size.z * 0.38;
+  // Text positioning relative to bounding box center
+  const textY = center.y + size.y * 0.15;
+  const frontZ = center.z + size.z * 0.42;
+  const backZ = center.z - size.z * 0.42;
 
   const textMaterialProps = {
     transparent: true,
@@ -293,7 +312,7 @@ export default function HatModel({
           <mesh
             geometry={frontGeo}
             position={[center.x, textY, frontZ]}
-            rotation={[-0.06, 0, 0]}
+            rotation={[-0.08, 0, 0]}
           >
             <meshStandardMaterial map={frontTexture} {...textMaterialProps} />
           </mesh>
@@ -303,19 +322,19 @@ export default function HatModel({
         {backTexture && (
           <mesh
             geometry={backGeo}
-            position={[center.x, textY - size.y * 0.02, backZ]}
-            rotation={[0.06, Math.PI, 0]}
+            position={[center.x, textY - size.y * 0.03, backZ]}
+            rotation={[0.08, Math.PI, 0]}
           >
             <meshStandardMaterial map={backTexture} {...textMaterialProps} />
           </mesh>
         )}
 
-        {/* Inside lid branding - globe + Khmer text, only visible from underneath */}
+        {/* Inside lid branding - only visible from underneath */}
         <mesh
-          position={[center.x, center.y - size.y * 0.18, center.z + size.z * 0.08]}
+          position={[center.x, center.y - size.y * 0.1, center.z]}
           rotation={[-Math.PI * 0.5, 0, 0]}
         >
-          <circleGeometry args={[size.x * 0.18, 32]} />
+          <circleGeometry args={[size.x * 0.15, 32]} />
           <meshBasicMaterial
             map={lidTexture}
             side={THREE.BackSide}
@@ -326,4 +345,4 @@ export default function HatModel({
   );
 }
 
-useGLTF.preload('/models/cap.glb');
+useGLTF.preload(MODEL_PATH);
