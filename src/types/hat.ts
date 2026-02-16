@@ -40,7 +40,7 @@ export const PRESET_TEXT_COLORS = [
 export const DEFAULT_HAT: HatConfig = {
   id: '',
   hatColor: '#CC0000',
-  text: 'MAKE AMERICA\nGREAT AGAIN',
+  text: 'MAKE EARTH\nGREAT AGAIN',
   backText: '',
   font: 'Times New Roman',
   textColor: '#FFFFFF',
@@ -48,6 +48,17 @@ export const DEFAULT_HAT: HatConfig = {
 };
 
 export const COUNTRY_MG_HATS: CountryHat[] = [
+  {
+    id: 'mega-earth',
+    hatColor: '#CC0000',
+    text: 'MAKE EARTH\nGREAT AGAIN',
+    backText: 'MEGA',
+    font: 'Times New Roman',
+    textColor: '#FFFFFF',
+    size: 'M',
+    countryCode: 'EARTH',
+    countryName: 'Earth'
+  },
   {
     id: 'mg-iran',
     hatColor: '#000000',
@@ -63,7 +74,7 @@ export const COUNTRY_MG_HATS: CountryHat[] = [
     id: 'mg-cambodia',
     hatColor: '#000000',
     text: 'MAKE CAMBODIA\nGREAT AGAIN',
-    backText: 'បង្កើតឡើងដើម្បីសន្តិភាព',
+    backText: '',
     font: 'Times New Roman',
     textColor: '#FFFFFF',
     size: 'M',
@@ -72,11 +83,11 @@ export const COUNTRY_MG_HATS: CountryHat[] = [
   },
   {
     id: 'mg-ukraine',
-    hatColor: '#000000',
+    hatColor: '#1a1a6e',
     text: 'MAKE UKRAINE\nGREAT AGAIN',
     backText: '',
     font: 'Times New Roman',
-    textColor: '#FFFFFF',
+    textColor: '#FFD700',
     size: 'M',
     countryCode: 'UA',
     countryName: 'Ukraine'

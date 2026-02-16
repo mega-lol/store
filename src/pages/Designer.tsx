@@ -7,21 +7,21 @@ export default function Designer() {
   const [config, setConfig] = useState<HatConfig>({ ...DEFAULT_HAT });
 
   return (
-    <main className="min-h-screen pt-14 bg-black">
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-3.5rem)]">
+    <main className="h-[100dvh] bg-black overflow-hidden pt-12">
+      <div className="flex flex-col lg:flex-row h-[calc(100dvh-3rem)]">
         {/* 3D Preview */}
-        <div className="flex-1 flex items-center justify-center p-4">
+        <div className="flex-1 relative">
           <HatScene
             hatColor={config.hatColor}
             text={config.text}
             backText={config.backText}
             textColor={config.textColor}
-            className="w-full h-full min-h-[400px]"
+            className="w-full h-full"
           />
         </div>
 
         {/* Panel */}
-        <div className="lg:w-[420px] border-l border-white/10 overflow-y-auto bg-zinc-950">
+        <div className="lg:w-[360px] border-l border-white/5 overflow-y-auto bg-black">
           <CustomizationPanel config={config} onChange={setConfig} />
         </div>
       </div>
