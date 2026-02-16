@@ -1,6 +1,6 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree, useLoader } from '@react-three/fiber';
-import { useGLTF, Decal as ProjectedDecal } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { Decal as HatDecal } from '@/types/hat';
 import DecalLayer from './DecalLayer';
@@ -82,6 +82,34 @@ function makeTextTexture(
   return tex;
 }
 
+function createCurvedPlane(
+  width: number,
+  height: number,
+  radius: number,
+  segsX = 48,
+  segsY = 16,
+): THREE.BufferGeometry {
+  const geo = new THREE.PlaneGeometry(width, height, segsX, segsY);
+  const pos = geo.attributes.position;
+
+  for (let i = 0; i < pos.count; i++) {
+    const px = pos.getX(i);
+    const py = pos.getY(i);
+    const angle = px / radius;
+
+    const newX = Math.sin(angle) * radius;
+    const newZ = Math.cos(angle) * radius - radius;
+
+    const ny = py / (height * 0.5);
+    const dome = 0.12 * radius * (1 - ny * ny * 0.3);
+
+    pos.setXYZ(i, newX, py, newZ + dome);
+  }
+
+  geo.computeVertexNormals();
+  return geo;
+}
+
 const FABRIC_MATERIALS = new Set(['baseballCap']);
 
 export default function HatModel({
@@ -97,7 +125,6 @@ export default function HatModel({
   autoRotate = false,
 }: HatModelProps) {
   const groupRef = useRef<THREE.Group>(null);
-  const decalTargetMeshRef = useRef<THREE.Mesh>(null!);
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF(MODEL_PATH);
 
@@ -114,36 +141,6 @@ export default function HatModel({
   });
 
   const capMesh = useMemo(() => gltfScene.clone(true), [gltfScene]);
-  const capSurfaceMesh = useMemo(() => {
-    let byName: THREE.Mesh | null = null;
-    let byMaterial: THREE.Mesh | null = null;
-    let fallback: THREE.Mesh | null = null;
-
-    capMesh.traverse((child) => {
-      if (!(child as THREE.Mesh).isMesh) return;
-      const mesh = child as THREE.Mesh;
-
-      if (!fallback) fallback = mesh;
-
-      if (!byName && mesh.name.toLowerCase().includes('maincap')) {
-        byName = mesh;
-      }
-
-      if (!byMaterial) {
-        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        const hasFabricMaterial = materials.some((mat) => FABRIC_MATERIALS.has(mat.name || ''));
-        if (hasFabricMaterial) {
-          byMaterial = mesh;
-        }
-      }
-    });
-
-    return byName || byMaterial || fallback;
-  }, [capMesh]);
-
-  if (capSurfaceMesh) {
-    decalTargetMeshRef.current = capSurfaceMesh;
-  }
 
   const { center, size, mcCenter, mcSize, mcFrontZ, mcBackZ } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(capMesh);
@@ -187,11 +184,13 @@ export default function HatModel({
 
   const frontW = mcSize.x * 0.62;
   const frontH = mcSize.y * 0.34;
-  const frontDepth = Math.max(mcSize.z * 0.42, 0.08);
+  const frontR = mcSize.x * 0.48;
+  const frontGeo = useMemo(() => createCurvedPlane(frontW, frontH, frontR), [frontW, frontH, frontR]);
 
   const backW = mcSize.x * 0.48;
   const backH = mcSize.y * 0.26;
-  const backDepth = Math.max(mcSize.z * 0.34, 0.07);
+  const backR = mcSize.x * 0.4;
+  const backGeo = useMemo(() => createCurvedPlane(backW, backH, backR), [backW, backH, backR]);
 
   useEffect(() => {
     capMesh.traverse((child) => {
@@ -238,8 +237,20 @@ export default function HatModel({
   }, [capMesh, hatColor, hatTexture]);
 
   const textY = mcCenter.y + mcSize.y * 0.12;
-  const frontTextPos: [number, number, number] = [mcCenter.x, textY, mcFrontZ + mcSize.z * 0.008];
-  const backTextPos: [number, number, number] = [mcCenter.x, textY - mcSize.y * 0.03, mcBackZ - mcSize.z * 0.008];
+  const frontZ = mcFrontZ + mcSize.z * 0.002;
+  const backZ = mcBackZ - mcSize.z * 0.002;
+
+  const textMaterialProps = {
+    transparent: true,
+    alphaTest: 0.1,
+    roughness: 0.65,
+    metalness: 0.05,
+    depthWrite: false,
+    side: THREE.FrontSide as THREE.Side,
+    polygonOffset: true,
+    polygonOffsetFactor: -8,
+    polygonOffsetUnits: -8,
+  };
 
   return (
     <group ref={groupRef} scale={displayScale}>
@@ -258,38 +269,20 @@ export default function HatModel({
           />
         ))}
 
-        {capSurfaceMesh && frontTexture && (
-          <ProjectedDecal mesh={decalTargetMeshRef} position={frontTextPos} scale={[frontW, frontH, frontDepth]}>
-            <meshStandardMaterial
-              map={frontTexture}
-              transparent
-              alphaTest={0.1}
-              depthTest
-              depthWrite={false}
-              polygonOffset
-              polygonOffsetFactor={-1}
-              polygonOffsetUnits={-1}
-              roughness={0.65}
-              metalness={0.05}
-            />
-          </ProjectedDecal>
+        {frontTexture && (
+          <mesh geometry={frontGeo} position={[mcCenter.x, textY, frontZ]} rotation={[-0.08, 0, 0]}>
+            <meshStandardMaterial map={frontTexture} {...textMaterialProps} />
+          </mesh>
         )}
 
-        {capSurfaceMesh && backTexture && (
-          <ProjectedDecal mesh={decalTargetMeshRef} position={backTextPos} scale={[backW, backH, backDepth]}>
-            <meshStandardMaterial
-              map={backTexture}
-              transparent
-              alphaTest={0.1}
-              depthTest
-              depthWrite={false}
-              polygonOffset
-              polygonOffsetFactor={-1}
-              polygonOffsetUnits={-1}
-              roughness={0.65}
-              metalness={0.05}
-            />
-          </ProjectedDecal>
+        {backTexture && (
+          <mesh
+            geometry={backGeo}
+            position={[mcCenter.x, textY - mcSize.y * 0.03, backZ]}
+            rotation={[0.08, Math.PI, 0]}
+          >
+            <meshStandardMaterial map={backTexture} {...textMaterialProps} />
+          </mesh>
         )}
       </group>
     </group>
