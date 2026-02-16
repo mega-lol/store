@@ -22,14 +22,14 @@ export default function CustomizationPanel({ config, onChange }: CustomizationPa
 
   const handleAddToCart = () => {
     addItem(config);
-    toast({ title: '🧢 Added to cart!', description: `Your custom hat has been added.` });
+    toast({ title: 'Added to cart', description: 'Your custom hat has been added.' });
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-5 p-5">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight font-display">Customize Your Hat</h2>
-        <p className="text-sm text-muted-foreground mt-1">Design it. Own it.</p>
+        <h2 className="text-xl font-bold tracking-tight text-white font-serif">Design Your Hat</h2>
+        <p className="text-xs text-white/40 mt-1">Front text, back text, any language.</p>
       </div>
 
       <ColorPicker
@@ -39,29 +39,41 @@ export default function CustomizationPanel({ config, onChange }: CustomizationPa
         presets={PRESET_HAT_COLORS}
       />
 
-      <div className="space-y-2">
-        <Label>Your Text</Label>
+      <div className="space-y-1.5">
+        <Label className="text-white/70 text-xs">Front Text</Label>
         <Input
           value={config.text}
           onChange={e => update({ text: e.target.value })}
-          placeholder="Type your message..."
+          placeholder="MAKE IRAN GREAT AGAIN"
           maxLength={40}
-          className="text-base"
+          className="text-sm bg-black border-white/20 text-white placeholder:text-white/30"
         />
-        <p className="text-xs text-muted-foreground">{config.text.length}/40 characters</p>
+        <p className="text-[10px] text-white/30">{config.text.length}/40 &middot; Use \n for new line</p>
       </div>
 
-      <div className="space-y-2">
-        <Label>Font Style</Label>
-        <div className="grid grid-cols-2 gap-2">
+      <div className="space-y-1.5">
+        <Label className="text-white/70 text-xs">Back Text (optional)</Label>
+        <Input
+          value={config.backText || ''}
+          onChange={e => update({ backText: e.target.value })}
+          placeholder="បង្កើតឡើងដើម្បីសន្តិភាព"
+          maxLength={60}
+          className="text-sm bg-black border-white/20 text-white placeholder:text-white/30"
+        />
+        <p className="text-[10px] text-white/30">Any language - rotate hat to see back</p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label className="text-white/70 text-xs">Font</Label>
+        <div className="grid grid-cols-2 gap-1.5">
           {FONTS.map(f => (
             <button
               key={f.value}
               onClick={() => update({ font: f.value })}
-              className={`px-3 py-2 rounded-md border text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded border text-xs transition-colors ${
                 config.font === f.value
-                  ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border hover:border-muted-foreground'
+                  ? 'border-white bg-white/10 text-white'
+                  : 'border-white/10 text-white/50 hover:border-white/30'
               }`}
               style={{ fontFamily: f.value }}
             >
@@ -72,23 +84,23 @@ export default function CustomizationPanel({ config, onChange }: CustomizationPa
       </div>
 
       <ColorPicker
-        label="Stitching / Text Color"
+        label="Text Color"
         value={config.textColor}
         onChange={textColor => update({ textColor })}
         presets={PRESET_TEXT_COLORS}
       />
 
-      <div className="space-y-2">
-        <Label>Size</Label>
-        <div className="flex gap-2">
+      <div className="space-y-1.5">
+        <Label className="text-white/70 text-xs">Size</Label>
+        <div className="flex gap-1.5">
           {SIZES.map(s => (
             <button
               key={s}
               onClick={() => update({ size: s })}
-              className={`w-12 h-10 rounded-md border text-sm font-medium transition-colors ${
+              className={`w-10 h-8 rounded border text-xs font-medium transition-colors ${
                 config.size === s
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border hover:border-muted-foreground'
+                  ? 'border-white bg-white text-black'
+                  : 'border-white/10 text-white/50 hover:border-white/30'
               }`}
             >
               {s}
@@ -97,13 +109,13 @@ export default function CustomizationPanel({ config, onChange }: CustomizationPa
         </div>
       </div>
 
-      <div className="pt-4 border-t border-border">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm text-muted-foreground">Price</span>
-          <span className="text-2xl font-bold text-primary">${PRICE_PER_HAT}</span>
+      <div className="pt-4 border-t border-white/10">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs text-white/40">Price</span>
+          <span className="text-xl font-bold text-white">${PRICE_PER_HAT}</span>
         </div>
-        <Button onClick={handleAddToCart} className="w-full h-12 text-base font-semibold" size="lg">
-          <ShoppingCart className="mr-2 h-5 w-5" />
+        <Button onClick={handleAddToCart} className="w-full h-10 text-sm font-semibold bg-white text-black hover:bg-white/90" size="lg">
+          <ShoppingCart className="mr-2 h-4 w-4" />
           Add to Cart
         </Button>
       </div>

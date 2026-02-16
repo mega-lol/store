@@ -13,7 +13,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null);
 
-const PRICE_PER_HAT = 29.99;
+const PRICE_PER_HAT = 47.00;
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
