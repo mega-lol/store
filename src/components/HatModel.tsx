@@ -1,8 +1,8 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree, useLoader } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
+import { useGLTF, Decal as ProjectedDecal } from '@react-three/drei';
 import * as THREE from 'three';
-import { Decal } from '@/types/hat';
+import { Decal as HatDecal } from '@/types/hat';
 import DecalLayer from './DecalLayer';
 
 interface HatModelProps {
@@ -11,14 +11,14 @@ interface HatModelProps {
   text: string;
   backText?: string;
   textColor: string;
-  decals?: Decal[];
-  onDecalUpdate?: (id: string, updates: Partial<Decal>) => void;
+  decals?: HatDecal[];
+  onDecalUpdate?: (id: string, updates: Partial<HatDecal>) => void;
   selectedDecalId?: string;
   onDecalSelect?: (id: string | null) => void;
   autoRotate?: boolean;
 }
 
-const MODEL_PATH = '/models/baseball_cap.glb';
+const MODEL_PATH = `${import.meta.env.BASE_URL}models/baseball_cap.glb`;
 
 function makeTextTexture(
   lines: string[],
@@ -33,21 +33,32 @@ function makeTextTexture(
 
   const x = c.width * 0.5;
   const lineCount = lines.length;
-  const maxLen = Math.max(...lines.map(l => l.length));
+  const maxLen = Math.max(...lines.map((l) => l.length));
 
-  let fontSize = lineCount === 1
-    ? (maxLen > 15 ? 180 : maxLen > 10 ? 220 : 260)
-    : lineCount === 2
-      ? (maxLen > 12 ? 160 : maxLen > 8 ? 200 : 240)
-      : (maxLen > 10 ? 140 : 180);
+  let fontSize =
+    lineCount === 1
+      ? maxLen > 15
+        ? 180
+        : maxLen > 10
+          ? 220
+          : 260
+      : lineCount === 2
+        ? maxLen > 12
+          ? 160
+          : maxLen > 8
+            ? 200
+            : 240
+        : maxLen > 10
+          ? 140
+          : 180;
 
   const fontStr = `900 ${fontSize}px "Bodoni Moda", "Times New Roman", serif`;
   ctx.font = fontStr;
 
-  const widest = lines.reduce((a, b) => a.length > b.length ? a : b);
+  const widest = lines.reduce((a, b) => (a.length > b.length ? a : b));
   const measured = ctx.measureText(widest).width;
   if (measured > c.width * 0.85) {
-    fontSize = Math.floor(fontSize * (c.width * 0.85) / measured);
+    fontSize = Math.floor((fontSize * (c.width * 0.85)) / measured);
   }
 
   const finalFont = `900 ${fontSize}px "Bodoni Moda", "Times New Roman", serif`;
@@ -66,86 +77,11 @@ function makeTextTexture(
   tex.generateMipmaps = true;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.magFilter = THREE.LinearFilter;
-  if (renderer) {
-    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  }
+  tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   tex.needsUpdate = true;
   return tex;
 }
 
-// Curved plane that wraps around the front of the cap
-function createCurvedPlane(
-  width: number,
-  height: number,
-  radius: number,
-  segsX = 48,
-  segsY = 16,
-): THREE.BufferGeometry {
-  const geo = new THREE.PlaneGeometry(width, height, segsX, segsY);
-  const pos = geo.attributes.position;
-
-  for (let i = 0; i < pos.count; i++) {
-    const px = pos.getX(i);
-    const py = pos.getY(i);
-    const angle = px / radius;
-
-    const newX = Math.sin(angle) * radius;
-    const newZ = Math.cos(angle) * radius - radius;
-
-    const ny = py / (height * 0.5);
-    const dome = 0.12 * radius * (1 - ny * ny * 0.3);
-
-    pos.setXYZ(i, newX, py, newZ + dome);
-  }
-
-  geo.computeVertexNormals();
-  return geo;
-}
-
-// Inside-lid branding texture: globe + Khmer script
-function makeLidTexture(renderer: THREE.WebGLRenderer, globeImg: HTMLImageElement | null): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 512;
-  const ctx = c.getContext('2d')!;
-
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(0, 0, c.width, c.height);
-
-  if (globeImg) {
-    const imgSize = 180;
-    const ix = (c.width - imgSize) / 2;
-    ctx.globalAlpha = 0.6;
-    ctx.drawImage(globeImg, ix, 80, imgSize, imgSize);
-    ctx.globalAlpha = 1;
-  }
-
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  ctx.fillStyle = '#555';
-  ctx.font = '28px serif';
-  ctx.fillText('មេហ្គា', c.width / 2, 310);
-
-  ctx.fillStyle = '#444';
-  ctx.font = '600 12px "Bodoni Moda", serif';
-  ctx.fillText('MEGA', c.width / 2, 345);
-
-  ctx.fillStyle = '#333';
-  ctx.font = '14px serif';
-  ctx.fillText('ធ្វើឱ្យផែនដីអស្ចារ្យម្ដងទៀត', c.width / 2, 385);
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.flipY = false;
-  if (renderer) {
-    tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
-  }
-  tex.needsUpdate = true;
-  return tex;
-}
-
-// Fabric material names from the GLB that should be recolored
 const FABRIC_MATERIALS = new Set(['baseballCap']);
 
 export default function HatModel({
@@ -158,9 +94,10 @@ export default function HatModel({
   onDecalUpdate,
   selectedDecalId,
   onDecalSelect,
-  autoRotate = false
+  autoRotate = false,
 }: HatModelProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const decalTargetMeshRef = useRef<THREE.Mesh>(null!);
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF(MODEL_PATH);
 
@@ -170,15 +107,6 @@ export default function HatModel({
     hatTexture.repeat.set(2, 2);
   }
 
-  // Load globe image for inside lid
-  const globeImgRef = useRef<HTMLImageElement | null>(null);
-  useEffect(() => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = import.meta.env.BASE_URL + 'images/planet7.png';
-    img.onload = () => { globeImgRef.current = img; };
-  }, []);
-
   useFrame((_, delta) => {
     if (autoRotate && groupRef.current) {
       groupRef.current.rotation.y += delta * 0.15;
@@ -186,18 +114,50 @@ export default function HatModel({
   });
 
   const capMesh = useMemo(() => gltfScene.clone(true), [gltfScene]);
+  const capSurfaceMesh = useMemo(() => {
+    let byName: THREE.Mesh | null = null;
+    let byMaterial: THREE.Mesh | null = null;
+    let fallback: THREE.Mesh | null = null;
+
+    capMesh.traverse((child) => {
+      if (!(child as THREE.Mesh).isMesh) return;
+      const mesh = child as THREE.Mesh;
+
+      if (!fallback) fallback = mesh;
+
+      if (!byName && mesh.name.toLowerCase().includes('maincap')) {
+        byName = mesh;
+      }
+
+      if (!byMaterial) {
+        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        const hasFabricMaterial = materials.some((mat) => FABRIC_MATERIALS.has(mat.name || ''));
+        if (hasFabricMaterial) {
+          byMaterial = mesh;
+        }
+      }
+    });
+
+    return byName || byMaterial || fallback;
+  }, [capMesh]);
+
+  if (capSurfaceMesh) {
+    decalTargetMeshRef.current = capSurfaceMesh;
+  }
 
   const { center, size, mcCenter, mcSize, mcFrontZ, mcBackZ } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(capMesh);
-    // Find mainCap group node for precise text placement (excludes bill, straps)
     let mc: THREE.Box3 = box;
+
     capMesh.traverse((child) => {
       if (child.name === 'mainCap') {
         mc = new THREE.Box3().setFromObject(child);
       }
     });
+
     const mcc = mc.getCenter(new THREE.Vector3());
     const mcs = mc.getSize(new THREE.Vector3());
+
     return {
       center: box.getCenter(new THREE.Vector3()),
       size: box.getSize(new THREE.Vector3()),
@@ -208,7 +168,6 @@ export default function HatModel({
     };
   }, [capMesh]);
 
-  // Normalize so hat fills ~1.6 units
   const displayScale = useMemo(() => {
     const maxDim = Math.max(size.x, size.y, size.z);
     return maxDim > 0 ? 1.6 / maxDim : 1;
@@ -226,33 +185,27 @@ export default function HatModel({
     return makeTextTexture(lines, textColor, gl);
   }, [backText, textColor, gl]);
 
-  const lidTexture = useMemo(() => {
-    return makeLidTexture(gl, globeImgRef.current);
-  }, [gl]);
-
-  // Text planes sized relative to mainCap bounding box
   const frontW = mcSize.x * 0.62;
   const frontH = mcSize.y * 0.34;
-  const frontR = mcSize.x * 0.48;
-  const frontGeo = useMemo(() => createCurvedPlane(frontW, frontH, frontR), [frontW, frontH, frontR]);
+  const frontDepth = Math.max(mcSize.z * 0.42, 0.08);
 
   const backW = mcSize.x * 0.48;
   const backH = mcSize.y * 0.26;
-  const backR = mcSize.x * 0.40;
-  const backGeo = useMemo(() => createCurvedPlane(backW, backH, backR), [backW, backH, backR]);
+  const backDepth = Math.max(mcSize.z * 0.34, 0.07);
 
-  // Apply hat color to fabric meshes, keep hardware parts (plastic, metal) original
   useEffect(() => {
     capMesh.traverse((child) => {
       if (!(child as THREE.Mesh).isMesh) return;
       const mesh = child as THREE.Mesh;
 
-      const remat = (m: THREE.Material) => {
-        const orig = m as THREE.MeshStandardMaterial;
-        const isFabric = FABRIC_MATERIALS.has(orig.name || m.name || '');
+      const remat = (material: THREE.Material) => {
+        const original = material as THREE.MeshStandardMaterial;
+        const materialName = original.name || material.name || '';
+        const isFabric = FABRIC_MATERIALS.has(materialName);
 
         if (isFabric) {
           const mat = new THREE.MeshStandardMaterial();
+          mat.name = materialName;
           mat.color.set(hatColor);
           if (hatTexture) {
             mat.map = hatTexture;
@@ -268,8 +221,7 @@ export default function HatModel({
           return mat;
         }
 
-        // Non-fabric: keep original but ensure opaque
-        const mat = orig.clone();
+        const mat = original.clone();
         mat.transparent = false;
         mat.opacity = 1;
         mat.depthWrite = true;
@@ -285,29 +237,15 @@ export default function HatModel({
     });
   }, [capMesh, hatColor, hatTexture]);
 
-  // Text positioning from mainCap bounding box (not the full scene with bill/straps)
   const textY = mcCenter.y + mcSize.y * 0.12;
-  const frontZ = mcFrontZ + mcSize.z * 0.01;  // just in front of cap surface
-  const backZ = mcBackZ - mcSize.z * 0.01;    // just behind back surface
-
-  const textMaterialProps = {
-    transparent: true,
-    alphaTest: 0.1,
-    roughness: 0.65,
-    metalness: 0.05,
-    depthWrite: true,
-    side: THREE.FrontSide as THREE.Side,
-    polygonOffset: true,
-    polygonOffsetFactor: -4,
-    polygonOffsetUnits: -4,
-  };
+  const frontTextPos: [number, number, number] = [mcCenter.x, textY, mcFrontZ + mcSize.z * 0.008];
+  const backTextPos: [number, number, number] = [mcCenter.x, textY - mcSize.y * 0.03, mcBackZ - mcSize.z * 0.008];
 
   return (
     <group ref={groupRef} scale={displayScale}>
       <group position={[-center.x, -center.y, -center.z]}>
         <primitive object={capMesh} onPointerMissed={() => onDecalSelect?.(null)} />
 
-        {/* User decals */}
         {decals.map((decal) => (
           <DecalLayer
             key={decal.id}
@@ -320,39 +258,39 @@ export default function HatModel({
           />
         ))}
 
-        {/* Front text */}
-        {frontTexture && (
-          <mesh
-            geometry={frontGeo}
-            position={[mcCenter.x, textY, frontZ]}
-            rotation={[-0.08, 0, 0]}
-          >
-            <meshStandardMaterial map={frontTexture} {...textMaterialProps} />
-          </mesh>
+        {capSurfaceMesh && frontTexture && (
+          <ProjectedDecal mesh={decalTargetMeshRef} position={frontTextPos} scale={[frontW, frontH, frontDepth]}>
+            <meshStandardMaterial
+              map={frontTexture}
+              transparent
+              alphaTest={0.1}
+              depthTest
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-1}
+              polygonOffsetUnits={-1}
+              roughness={0.65}
+              metalness={0.05}
+            />
+          </ProjectedDecal>
         )}
 
-        {/* Back text */}
-        {backTexture && (
-          <mesh
-            geometry={backGeo}
-            position={[mcCenter.x, textY - mcSize.y * 0.03, backZ]}
-            rotation={[0.08, Math.PI, 0]}
-          >
-            <meshStandardMaterial map={backTexture} {...textMaterialProps} />
-          </mesh>
+        {capSurfaceMesh && backTexture && (
+          <ProjectedDecal mesh={decalTargetMeshRef} position={backTextPos} scale={[backW, backH, backDepth]}>
+            <meshStandardMaterial
+              map={backTexture}
+              transparent
+              alphaTest={0.1}
+              depthTest
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-1}
+              polygonOffsetUnits={-1}
+              roughness={0.65}
+              metalness={0.05}
+            />
+          </ProjectedDecal>
         )}
-
-        {/* Inside lid branding - only visible from underneath */}
-        <mesh
-          position={[mcCenter.x, mcCenter.y - mcSize.y * 0.15, mcCenter.z]}
-          rotation={[-Math.PI * 0.5, 0, 0]}
-        >
-          <circleGeometry args={[mcSize.x * 0.15, 32]} />
-          <meshBasicMaterial
-            map={lidTexture}
-            side={THREE.BackSide}
-          />
-        </mesh>
       </group>
     </group>
   );
