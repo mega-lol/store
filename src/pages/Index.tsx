@@ -7,11 +7,10 @@ import HatScene from '@/components/HatScene';
 import { DEFAULT_HAT, HatConfig, PRESET_HAT_COLORS, PRESET_TEXT_COLORS } from '@/types/hat';
 import { useCart, PRICE_PER_HAT } from '@/store/cartStore';
 import { useToast } from '@/hooks/use-toast';
-import { ShoppingCart, Share2, Info } from 'lucide-react';
+import { ShoppingCart, Share2 } from 'lucide-react';
 
 export default function Index() {
   const [config, setConfig] = useState<HatConfig>({ ...DEFAULT_HAT });
-  const [showAbout, setShowAbout] = useState(false);
   const { addItem } = useCart();
   const { toast } = useToast();
 
@@ -43,7 +42,6 @@ export default function Index() {
             text={config.text}
             backText={config.backText}
             textColor={config.textColor}
-            showViewButtons
             className="w-full h-full"
           />
         </div>
@@ -53,22 +51,10 @@ export default function Index() {
           <div className="p-4 space-y-3">
 
             {/* Logo */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CapLogo color={config.hatColor} size={28} />
-                <span className="text-sm font-semibold tracking-wider">MakeHatAgain</span>
-              </div>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowAbout(!showAbout)}>
-                <Info className="h-3.5 w-3.5" />
-              </Button>
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🧢</span>
+              <span className="text-sm font-semibold tracking-wider">MakeHatAgain</span>
             </div>
-
-            {showAbout && (
-              <p className="text-[11px] text-zinc-500 leading-relaxed">
-                Design custom "Make Great" hats for any country, in any language.
-                Black cap, white embroidery. Share your design or buy one.
-              </p>
-            )}
 
             <Separator className="bg-zinc-800" />
 
@@ -77,7 +63,7 @@ export default function Index() {
               <Input
                 value={config.text}
                 onChange={e => update({ text: e.target.value })}
-                placeholder="MAKE IRAN\nGREAT AGAIN"
+                placeholder="MAKE AMERICA\nGREAT AGAIN"
                 maxLength={40}
                 className="h-8 text-xs bg-zinc-900 border-zinc-800 text-zinc-100 placeholder:text-zinc-600"
               />
@@ -180,27 +166,3 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-// SVG cap logo that matches current hat color
-function CapLogo({ color, size = 24 }: { color: string; size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Brim */}
-      <path
-        d="M2 16C2 16 6 18 12 18C18 18 22 16 22 16L20 15C20 15 16.5 16.5 12 16.5C7.5 16.5 4 15 4 15L2 16Z"
-        fill={color}
-        stroke="currentColor"
-        strokeWidth="0.5"
-        opacity="0.9"
-      />
-      {/* Crown */}
-      <path
-        d="M5 15C5 15 5 8 12 6C19 8 19 15 19 15"
-        fill={color}
-        stroke="currentColor"
-        strokeWidth="0.5"
-      />
-      {/* Button */}
-      <circle cx="12" cy="6" r="0.8" fill={color} stroke="currentColor" strokeWidth="0.3" />
-    </svg>
-  );
-}

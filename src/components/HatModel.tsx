@@ -11,7 +11,6 @@ interface HatModelProps {
   autoRotate?: boolean;
 }
 
-// Canvas texture for embroidery-style text
 function makeTextTexture(
   lines: string[],
   textColor: string,
@@ -64,7 +63,6 @@ function makeTextTexture(
   return tex;
 }
 
-// Create a curved geometry that follows the hat crown shape
 function createCurvedPlane(
   width: number,
   height: number,
@@ -76,13 +74,11 @@ function createCurvedPlane(
   const pos = geo.attributes.position;
 
   for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const y = pos.getY(i);
-    // Curve forward based on distance from center (cylindrical wrap)
-    const normalizedX = x / (width * 0.5);
+    const px = pos.getX(i);
+    const py = pos.getY(i);
+    const normalizedX = px / (width * 0.5);
     const z = curveAmount * (1 - normalizedX * normalizedX);
-    // Slight vertical curve too (dome shape)
-    const normalizedY = y / (height * 0.5);
+    const normalizedY = py / (height * 0.5);
     const zY = curveAmount * 0.3 * (1 - normalizedY * normalizedY);
     pos.setZ(i, z + zY);
   }
@@ -102,31 +98,24 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
     }
   });
 
-  // Clone the scene so we can modify materials independently
-  const capMesh = useMemo(() => {
-    return gltfScene.clone(true);
-  }, [gltfScene]);
+  const capMesh = useMemo(() => gltfScene.clone(true), [gltfScene]);
 
-  // Front text texture
   const frontTexture = useMemo(() => {
     const lines = (text || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
     return makeTextTexture(lines, textColor, gl);
   }, [text, textColor, gl]);
 
-  // Back text texture
   const backTexture = useMemo(() => {
     const lines = (backText || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
     return makeTextTexture(lines, textColor, gl);
   }, [backText, textColor, gl]);
 
-  // Curved geometry for front text
-  const frontGeo = useMemo(() => createCurvedPlane(1.5, 0.9, 0.15), []);
-  // Curved geometry for back text
-  const backGeo = useMemo(() => createCurvedPlane(1.2, 0.7, 0.12), []);
+  const frontGeo = useMemo(() => createCurvedPlane(1.4, 0.85, 0.18), []);
+  const backGeo = useMemo(() => createCurvedPlane(1.1, 0.65, 0.14), []);
 
-  // Apply hat color to all cap materials
+  // Apply hat color to the cap material
   useEffect(() => {
     capMesh.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
@@ -135,7 +124,7 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
           mesh.material = mesh.material.map(m => {
             const cloned = m.clone() as THREE.MeshStandardMaterial;
             cloned.color.set(hatColor);
-            cloned.roughness = 0.88;
+            cloned.roughness = 0.85;
             cloned.metalness = 0.0;
             cloned.needsUpdate = true;
             return cloned;
@@ -143,7 +132,7 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
         } else {
           const mat = mesh.material.clone() as THREE.MeshStandardMaterial;
           mat.color.set(hatColor);
-          mat.roughness = 0.88;
+          mat.roughness = 0.85;
           mat.metalness = 0.0;
           mat.needsUpdate = true;
           mesh.material = mat;
@@ -152,19 +141,7 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
     });
   }, [capMesh, hatColor]);
 
-  // Show only the black hat mesh, hide others
-  useEffect(() => {
-    capMesh.traverse((child) => {
-      if (child.name === 'brownhat_0' || child.name === 'pinkhat_2') {
-        child.visible = false;
-      }
-      if (child.name === 'blackhat_1') {
-        child.visible = true;
-      }
-    });
-  }, [capMesh]);
-
-  // Compute bounding box to center the hat
+  // Compute bounding box to center
   const capBounds = useMemo(() => {
     const box = new THREE.Box3().setFromObject(capMesh);
     return {
@@ -173,19 +150,27 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
     };
   }, [capMesh]);
 
+  // Scale to normalize the model size - fit within a ~2 unit sphere
+  const scale = useMemo(() => {
+    const maxDim = Math.max(capBounds.size.x, capBounds.size.y, capBounds.size.z);
+    return maxDim > 0 ? 2.0 / maxDim : 1;
+  }, [capBounds]);
+
   return (
     <group ref={groupRef}>
-      {/* GLB Cap Model */}
       <primitive
         object={capMesh}
-        scale={3.0}
-        position={[0, -capBounds.center.y * 3 + 0.1, 0]}
-        rotation={[0, 0, 0]}
+        scale={scale}
+        position={[
+          -capBounds.center.x * scale,
+          -capBounds.center.y * scale - 0.1,
+          -capBounds.center.z * scale,
+        ]}
       />
 
-      {/* Front text - curved to match hat crown */}
+      {/* Front text - curved */}
       {frontTexture && (
-        <mesh geometry={frontGeo} position={[0, 0.35, 0.9]} rotation={[-0.12, 0, 0]}>
+        <mesh geometry={frontGeo} position={[0, 0.25, 0.85]} rotation={[-0.1, 0, 0]}>
           <meshStandardMaterial
             map={frontTexture}
             transparent
@@ -197,9 +182,9 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
         </mesh>
       )}
 
-      {/* Back text - curved to match hat crown */}
+      {/* Back text - curved */}
       {backTexture && (
-        <mesh geometry={backGeo} position={[0, 0.35, -0.9]} rotation={[0.12, Math.PI, 0]}>
+        <mesh geometry={backGeo} position={[0, 0.25, -0.85]} rotation={[0.1, Math.PI, 0]}>
           <meshStandardMaterial
             map={backTexture}
             transparent
@@ -226,8 +211,8 @@ function SideEmblem() {
   }, []);
 
   return (
-    <mesh position={[1.05, 0.4, 0.1]} rotation={[0, Math.PI / 2, 0]}>
-      <planeGeometry args={[0.4, 0.4]} />
+    <mesh position={[0.9, 0.3, 0.1]} rotation={[0, Math.PI / 2, 0]}>
+      <planeGeometry args={[0.35, 0.35]} />
       <meshStandardMaterial map={texture} transparent roughness={0.8} depthWrite={false} side={THREE.DoubleSide} />
     </mesh>
   );

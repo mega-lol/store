@@ -9,15 +9,11 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/90 backdrop-blur-xl">
       <div className="container flex h-14 items-center justify-between">
-        <Link to="/" className="text-lg font-bold tracking-widest uppercase text-white font-serif">
-          MakeHatAgain
+        <Link to="/" className="flex items-center gap-2 text-white">
+          <span className="text-xl">🧢</span>
+          <span className="text-sm font-bold tracking-widest uppercase font-serif">MakeHatAgain</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <Link to="/designer">
-            <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10 text-xs">
-              Designer
-            </Button>
-          </Link>
+        <div className="flex items-center gap-1">
           <Link to="/mg-collection">
             <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10 text-xs">
               Collection

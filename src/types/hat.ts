@@ -28,8 +28,8 @@ export const FONTS = [
 ] as const;
 
 export const PRESET_HAT_COLORS = [
-  '#000000', '#1a1a1a', '#222222', '#333333',
-  '#CC0000', '#1a1a6e', '#1a472a', '#F5F5DC',
+  '#CC0000', '#000000', '#1a1a6e', '#FFFFFF',
+  '#1a472a', '#F5F5DC', '#FF6600', '#333333',
 ];
 
 export const PRESET_TEXT_COLORS = [
@@ -39,8 +39,8 @@ export const PRESET_TEXT_COLORS = [
 
 export const DEFAULT_HAT: HatConfig = {
   id: '',
-  hatColor: '#000000',
-  text: 'MAKE IRAN\nGREAT AGAIN',
+  hatColor: '#CC0000',
+  text: 'MAKE AMERICA\nGREAT AGAIN',
   backText: '',
   font: 'Times New Roman',
   textColor: '#FFFFFF',
