@@ -224,22 +224,24 @@ export default function HatModel({
   const backH = size.y * 0.32;
   const backGeo = useMemo(() => createCurvedPlane(backW, backH, size.x * 0.44), [backW, backH, size.x]);
 
-  // Apply hat color/texture to all meshes
+  // Apply hat color/texture to all meshes - force opaque
   useEffect(() => {
     capMesh.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
         const applyMaterial = (m: THREE.Material) => {
-          const mat = m.clone() as THREE.MeshStandardMaterial;
+          const mat = new THREE.MeshStandardMaterial();
+          mat.color.set(hatColor);
           if (hatTexture) {
             mat.map = hatTexture;
             mat.color.set('#ffffff');
-          } else {
-            mat.map = null;
-            mat.color.set(hatColor);
           }
           mat.roughness = 0.7;
           mat.metalness = 0.1;
+          mat.transparent = false;
+          mat.opacity = 1;
+          mat.depthWrite = true;
+          mat.side = THREE.FrontSide;
           mat.needsUpdate = true;
           return mat;
         };
@@ -258,14 +260,14 @@ export default function HatModel({
 
   const textMaterialProps = {
     transparent: true,
-    alphaTest: 0.05,
+    alphaTest: 0.1,
     roughness: 0.65,
     metalness: 0.05,
-    depthWrite: false,
+    depthWrite: true,
     side: THREE.FrontSide as THREE.Side,
     polygonOffset: true,
     polygonOffsetFactor: -4,
-    polygonOffsetUnits: -1,
+    polygonOffsetUnits: -4,
   };
 
   return (
@@ -308,16 +310,14 @@ export default function HatModel({
           </mesh>
         )}
 
-        {/* Inside lid branding - globe + Khmer text */}
+        {/* Inside lid branding - globe + Khmer text, only visible from underneath */}
         <mesh
-          position={[center.x, center.y - size.y * 0.35, center.z + size.z * 0.05]}
-          rotation={[Math.PI * 0.5, 0, 0]}
+          position={[center.x, center.y - size.y * 0.18, center.z + size.z * 0.08]}
+          rotation={[-Math.PI * 0.5, 0, 0]}
         >
-          <circleGeometry args={[size.x * 0.28, 32]} />
-          <meshStandardMaterial
+          <circleGeometry args={[size.x * 0.18, 32]} />
+          <meshBasicMaterial
             map={lidTexture}
-            roughness={0.9}
-            metalness={0}
             side={THREE.BackSide}
           />
         </mesh>
