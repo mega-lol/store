@@ -1,14 +1,21 @@
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, ContactShadows } from '@react-three/drei';
+import { OrbitControls, ContactShadows, Environment } from '@react-three/drei';
 import HatModel from './HatModel';
 import { Suspense } from 'react';
 import * as THREE from 'three';
 
+import { Decal } from '@/types/hat';
+
 interface HatSceneProps {
   hatColor: string;
+  texture?: string;
   text: string;
   backText?: string;
   textColor: string;
+  decals?: Decal[];
+  onDecalUpdate?: (id: string, updates: Partial<Decal>) => void;
+  selectedDecalId?: string;
+  onDecalSelect?: (id: string | null) => void;
   autoRotate?: boolean;
   className?: string;
 }
@@ -16,49 +23,66 @@ interface HatSceneProps {
 function Lights() {
   return (
     <>
-      <ambientLight intensity={0.35} />
-      <directionalLight position={[4, 5, 4]} intensity={1.8} color="#ffffff" />
-      <directionalLight position={[-3, 3, 2]} intensity={0.5} color="#e8e8ff" />
-      <directionalLight position={[0, 3, -4]} intensity={0.6} color="#ffffff" />
-      <directionalLight position={[0, -1, 3]} intensity={0.2} color="#ffffff" />
+      <ambientLight intensity={0.3} />
+      <spotLight
+        position={[10, 10, 10]}
+        angle={0.15}
+        penumbra={1}
+        intensity={1.8}
+        castShadow
+      />
+      <directionalLight position={[-5, 5, -5]} intensity={0.4} color="#f0f0ff" />
+      <Environment preset="city" />
     </>
   );
 }
 
 export default function HatScene({
   hatColor,
+  texture,
   text,
   backText,
   textColor,
+  decals,
+  onDecalUpdate,
+  selectedDecalId,
+  onDecalSelect,
   autoRotate = false,
   className,
 }: HatSceneProps) {
   return (
     <div className={`relative ${className || ''}`}>
       <Canvas
-        camera={{ position: [0, 0.3, 2.5], fov: 42 }}
+        camera={{ position: [0, 0.2, 2.8], fov: 35 }}
         gl={{
           antialias: true,
           alpha: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.05,
+          toneMappingExposure: 1.1,
           outputColorSpace: THREE.SRGBColorSpace,
+          preserveDrawingBuffer: true,
         }}
         dpr={[1, 2]}
         style={{ background: 'transparent' }}
+        onPointerMissed={() => onDecalSelect?.(null)}
       >
         <Suspense fallback={null}>
           <Lights />
           <HatModel
             hatColor={hatColor}
+            texture={texture}
             text={text}
             backText={backText}
             textColor={textColor}
+            decals={decals}
+            onDecalUpdate={onDecalUpdate}
+            selectedDecalId={selectedDecalId}
+            onDecalSelect={onDecalSelect}
             autoRotate={autoRotate}
           />
           <ContactShadows
             position={[0, -0.52, 0]}
-            opacity={0.3}
+            opacity={0.25}
             scale={5}
             blur={2.5}
             far={3}
@@ -72,6 +96,7 @@ export default function HatScene({
             dampingFactor={0.05}
             maxPolarAngle={Math.PI * 0.75}
             minPolarAngle={Math.PI * 0.15}
+            makeDefault
           />
         </Suspense>
       </Canvas>

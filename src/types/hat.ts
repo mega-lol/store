@@ -1,6 +1,21 @@
+export type DecalType = 'image' | 'text';
+
+export interface Decal {
+  id: string;
+  type: DecalType;
+  url?: string; // For image decals
+  text?: string; // For text decals
+  color?: string; // For text decals
+  font?: string; // For text decals
+  position: [number, number, number];
+  rotation: [number, number, number];
+  scale: [number, number, number];
+}
+
 export interface HatConfig {
   id: string;
   hatColor: string;
+  texture?: string; // URL for the base hat texture
   text: string;
   backText?: string;
   font: string;
@@ -8,6 +23,7 @@ export interface HatConfig {
   size: 'S' | 'M' | 'L' | 'XL';
   countryCode?: string;
   countryName?: string;
+  decals: Decal[];
 }
 
 export interface CountryHat extends HatConfig {
@@ -39,12 +55,13 @@ export const PRESET_TEXT_COLORS = [
 
 export const DEFAULT_HAT: HatConfig = {
   id: '',
-  hatColor: '#CC0000',
+  hatColor: '#FFFFFF',
   text: 'MAKE EARTH\nGREAT AGAIN',
   backText: '',
   font: 'Times New Roman',
-  textColor: '#FFFFFF',
+  textColor: '#000000',
   size: 'M',
+  decals: [],
 };
 
 export const COUNTRY_MG_HATS: CountryHat[] = [
@@ -57,7 +74,8 @@ export const COUNTRY_MG_HATS: CountryHat[] = [
     textColor: '#FFFFFF',
     size: 'M',
     countryCode: 'EARTH',
-    countryName: 'Earth'
+    countryName: 'Earth',
+    decals: []
   },
   {
     id: 'mg-iran',
@@ -68,7 +86,8 @@ export const COUNTRY_MG_HATS: CountryHat[] = [
     textColor: '#FFFFFF',
     size: 'M',
     countryCode: 'IR',
-    countryName: 'Iran'
+    countryName: 'Iran',
+    decals: []
   },
   {
     id: 'mg-cambodia',
@@ -79,7 +98,8 @@ export const COUNTRY_MG_HATS: CountryHat[] = [
     textColor: '#FFFFFF',
     size: 'M',
     countryCode: 'KH',
-    countryName: 'Cambodia'
+    countryName: 'Cambodia',
+    decals: []
   },
   {
     id: 'mg-ukraine',
@@ -90,7 +110,8 @@ export const COUNTRY_MG_HATS: CountryHat[] = [
     textColor: '#FFD700',
     size: 'M',
     countryCode: 'UA',
-    countryName: 'Ukraine'
+    countryName: 'Ukraine',
+    decals: []
   },
 ];
 

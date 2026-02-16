@@ -1,13 +1,20 @@
 import { useRef, useMemo, useEffect } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame, useThree, useLoader } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
+import { Decal } from '@/types/hat';
+import DecalLayer from './DecalLayer';
 
 interface HatModelProps {
   hatColor: string;
+  texture?: string;
   text: string;
   backText?: string;
   textColor: string;
+  decals?: Decal[];
+  onDecalUpdate?: (id: string, updates: Partial<Decal>) => void;
+  selectedDecalId?: string;
+  onDecalSelect?: (id: string | null) => void;
   autoRotate?: boolean;
 }
 
@@ -26,7 +33,6 @@ function makeTextTexture(
   const lineCount = lines.length;
   const maxLen = Math.max(...lines.map(l => l.length));
 
-  // Size text to fit canvas with generous padding
   let fontSize = lineCount === 1
     ? (maxLen > 15 ? 180 : maxLen > 10 ? 220 : 260)
     : lineCount === 2
@@ -36,7 +42,6 @@ function makeTextTexture(
   const fontStr = `900 ${fontSize}px "Bodoni Moda", "Times New Roman", serif`;
   ctx.font = fontStr;
 
-  // Measure and scale down if needed
   const widest = lines.reduce((a, b) => a.length > b.length ? a : b);
   const measured = ctx.measureText(widest).width;
   if (measured > c.width * 0.85) {
@@ -49,28 +54,9 @@ function makeTextTexture(
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-
-  // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.font = finalFont;
-  lines.forEach((t, i) => ctx.fillText(t, x + 4, y0 + i * dy + 4));
-
-  // Main text
   ctx.fillStyle = textColor;
   ctx.font = finalFont;
   lines.forEach((t, i) => ctx.fillText(t, x, y0 + i * dy));
-
-  // Subtle embroidery noise
-  const img = ctx.getImageData(0, 0, c.width, c.height);
-  for (let i = 0; i < img.data.length; i += 4) {
-    if (img.data[i + 3] > 0) {
-      const n = (Math.random() - 0.5) * 10;
-      img.data[i] = Math.min(255, Math.max(0, img.data[i] + n));
-      img.data[i + 1] = Math.min(255, Math.max(0, img.data[i + 1] + n));
-      img.data[i + 2] = Math.min(255, Math.max(0, img.data[i + 2] + n));
-    }
-  }
-  ctx.putImageData(img, 0, 0);
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -85,7 +71,6 @@ function makeTextTexture(
   return tex;
 }
 
-// Create a plane that wraps around a cylinder (front of cap)
 function createCurvedPlane(
   width: number,
   height: number,
@@ -101,11 +86,9 @@ function createCurvedPlane(
     const py = pos.getY(i);
     const angle = px / radius;
 
-    // Cylindrical wrap
     const newX = Math.sin(angle) * radius;
     const newZ = Math.cos(angle) * radius - radius;
 
-    // Slight dome bulge for cap crown
     const ny = py / (height * 0.5);
     const dome = 0.15 * radius * (1 - ny * ny * 0.3);
 
@@ -116,10 +99,84 @@ function createCurvedPlane(
   return geo;
 }
 
-export default function HatModel({ hatColor, text, backText, textColor, autoRotate = false }: HatModelProps) {
+// Inside-lid branding texture: globe + Khmer script
+function makeLidTexture(renderer: THREE.WebGLRenderer, globeImg: HTMLImageElement | null): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 512;
+  const ctx = c.getContext('2d')!;
+
+  // Dark background for inside lid
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, c.width, c.height);
+
+  // Draw globe image centered
+  if (globeImg) {
+    const imgSize = 200;
+    const ix = (c.width - imgSize) / 2;
+    const iy = 80;
+    ctx.globalAlpha = 0.7;
+    ctx.drawImage(globeImg, ix, iy, imgSize, imgSize);
+    ctx.globalAlpha = 1;
+  }
+
+  // Khmer script: "មេហ្គា" (MEGA) + tagline
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#666';
+  ctx.font = '32px serif';
+  ctx.fillText('មេហ្គា', c.width / 2, 320);
+
+  // Small "MEGA" latin text
+  ctx.fillStyle = '#444';
+  ctx.font = '600 14px "Bodoni Moda", serif';
+  ctx.fillText('MEGA', c.width / 2, 360);
+
+  // Khmer tagline: "ធ្វើឱ្យផែនដីអស្ចារ្យម្ដងទៀត"
+  ctx.fillStyle = '#333';
+  ctx.font = '16px serif';
+  ctx.fillText('ធ្វើឱ្យផែនដីអស្ចារ្យម្ដងទៀត', c.width / 2, 400);
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.flipY = false;
+  if (renderer) {
+    tex.anisotropy = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+  }
+  tex.needsUpdate = true;
+  return tex;
+}
+
+export default function HatModel({
+  hatColor,
+  texture,
+  text,
+  backText,
+  textColor,
+  decals = [],
+  onDecalUpdate,
+  selectedDecalId,
+  onDecalSelect,
+  autoRotate = false
+}: HatModelProps) {
   const groupRef = useRef<THREE.Group>(null);
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF('/models/cap.glb');
+
+  const hatTexture = texture ? useLoader(THREE.TextureLoader, texture) : null;
+  if (hatTexture) {
+    hatTexture.wrapS = hatTexture.wrapT = THREE.RepeatWrapping;
+    hatTexture.repeat.set(2, 2);
+  }
+
+  // Load globe image for inside lid
+  const globeImgRef = useRef<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = import.meta.env.BASE_URL + 'images/planet7.png';
+    img.onload = () => { globeImgRef.current = img; };
+  }, []);
 
   useFrame((_, delta) => {
     if (autoRotate && groupRef.current) {
@@ -129,7 +186,6 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
 
   const capMesh = useMemo(() => gltfScene.clone(true), [gltfScene]);
 
-  // Bounding box of the loaded model
   const { center, size } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(capMesh);
     return {
@@ -138,7 +194,6 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
     };
   }, [capMesh]);
 
-  // Normalize so hat fills ~1.6 units
   const displayScale = useMemo(() => {
     const maxDim = Math.max(size.x, size.y, size.z);
     return maxDim > 0 ? 1.6 / maxDim : 1;
@@ -156,6 +211,10 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
     return makeTextTexture(lines, textColor, gl);
   }, [backText, textColor, gl]);
 
+  const lidTexture = useMemo(() => {
+    return makeLidTexture(gl, globeImgRef.current);
+  }, [gl]);
+
   // Text planes sized relative to hat
   const frontW = size.x * 0.72;
   const frontH = size.y * 0.42;
@@ -165,27 +224,33 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
   const backH = size.y * 0.32;
   const backGeo = useMemo(() => createCurvedPlane(backW, backH, size.x * 0.44), [backW, backH, size.x]);
 
-  // Apply hat color to all meshes in the model
+  // Apply hat color/texture to all meshes
   useEffect(() => {
     capMesh.traverse((child) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
-        const applyColor = (m: THREE.Material) => {
+        const applyMaterial = (m: THREE.Material) => {
           const mat = m.clone() as THREE.MeshStandardMaterial;
-          mat.color.set(hatColor);
-          mat.roughness = 0.8;
-          mat.metalness = 0.0;
+          if (hatTexture) {
+            mat.map = hatTexture;
+            mat.color.set('#ffffff');
+          } else {
+            mat.map = null;
+            mat.color.set(hatColor);
+          }
+          mat.roughness = 0.7;
+          mat.metalness = 0.1;
           mat.needsUpdate = true;
           return mat;
         };
         if (Array.isArray(mesh.material)) {
-          mesh.material = mesh.material.map(applyColor);
+          mesh.material = mesh.material.map(applyMaterial);
         } else {
-          mesh.material = applyColor(mesh.material);
+          mesh.material = applyMaterial(mesh.material);
         }
       }
     });
-  }, [capMesh, hatColor]);
+  }, [capMesh, hatColor, hatTexture]);
 
   const textY = center.y + size.y * 0.06;
   const frontZ = center.z + size.z * 0.38;
@@ -206,7 +271,20 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
   return (
     <group ref={groupRef} scale={displayScale}>
       <group position={[-center.x, -center.y, -center.z]}>
-        <primitive object={capMesh} />
+        <primitive object={capMesh} onPointerMissed={() => onDecalSelect?.(null)} />
+
+        {/* User decals */}
+        {decals.map((decal) => (
+          <DecalLayer
+            key={decal.id}
+            decal={decal}
+            isSelected={selectedDecalId === decal.id}
+            onUpdate={onDecalUpdate}
+            onClick={() => {
+              onDecalSelect?.(decal.id);
+            }}
+          />
+        ))}
 
         {/* Front text */}
         {frontTexture && (
@@ -229,6 +307,20 @@ export default function HatModel({ hatColor, text, backText, textColor, autoRota
             <meshStandardMaterial map={backTexture} {...textMaterialProps} />
           </mesh>
         )}
+
+        {/* Inside lid branding - globe + Khmer text */}
+        <mesh
+          position={[center.x, center.y - size.y * 0.35, center.z + size.z * 0.05]}
+          rotation={[Math.PI * 0.5, 0, 0]}
+        >
+          <circleGeometry args={[size.x * 0.28, 32]} />
+          <meshStandardMaterial
+            map={lidTexture}
+            roughness={0.9}
+            metalness={0}
+            side={THREE.BackSide}
+          />
+        </mesh>
       </group>
     </group>
   );

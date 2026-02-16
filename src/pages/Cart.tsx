@@ -44,11 +44,9 @@ export default function Cart() {
           {items.map(item => (
             <div key={item.hat.id} className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card">
               <div
-                className="w-16 h-16 rounded-lg flex items-center justify-center text-2xl shrink-0"
+                className="w-16 h-16 rounded-lg shrink-0 border border-white/10"
                 style={{ backgroundColor: item.hat.hatColor }}
-              >
-                🧢
-              </div>
+              />
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{item.hat.text || 'Custom Hat'}</p>
                 <p className="text-xs text-muted-foreground">Size: {item.hat.size} · Font: {item.hat.font}</p>
