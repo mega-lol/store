@@ -181,17 +181,30 @@ export default function HatModel({
 
   useFrame((_, delta) => {
     if (autoRotate && groupRef.current) {
-      groupRef.current.rotation.y += delta * 0.4;
+      groupRef.current.rotation.y += delta * 0.15;
     }
   });
 
   const capMesh = useMemo(() => gltfScene.clone(true), [gltfScene]);
 
-  const { center, size } = useMemo(() => {
+  const { center, size, mcCenter, mcSize, mcFrontZ, mcBackZ } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(capMesh);
+    // Find mainCap group node for precise text placement (excludes bill, straps)
+    let mc: THREE.Box3 = box;
+    capMesh.traverse((child) => {
+      if (child.name === 'mainCap') {
+        mc = new THREE.Box3().setFromObject(child);
+      }
+    });
+    const mcc = mc.getCenter(new THREE.Vector3());
+    const mcs = mc.getSize(new THREE.Vector3());
     return {
       center: box.getCenter(new THREE.Vector3()),
       size: box.getSize(new THREE.Vector3()),
+      mcCenter: mcc,
+      mcSize: mcs,
+      mcFrontZ: mc.max.z,
+      mcBackZ: mc.min.z,
     };
   }, [capMesh]);
 
@@ -217,15 +230,15 @@ export default function HatModel({
     return makeLidTexture(gl, globeImgRef.current);
   }, [gl]);
 
-  // Text planes sized relative to hat bounding box
-  const frontW = size.x * 0.65;
-  const frontH = size.y * 0.35;
-  const frontR = size.x * 0.45;
+  // Text planes sized relative to mainCap bounding box
+  const frontW = mcSize.x * 0.62;
+  const frontH = mcSize.y * 0.34;
+  const frontR = mcSize.x * 0.48;
   const frontGeo = useMemo(() => createCurvedPlane(frontW, frontH, frontR), [frontW, frontH, frontR]);
 
-  const backW = size.x * 0.50;
-  const backH = size.y * 0.28;
-  const backR = size.x * 0.40;
+  const backW = mcSize.x * 0.48;
+  const backH = mcSize.y * 0.26;
+  const backR = mcSize.x * 0.40;
   const backGeo = useMemo(() => createCurvedPlane(backW, backH, backR), [backW, backH, backR]);
 
   // Apply hat color to fabric meshes, keep hardware parts (plastic, metal) original
@@ -272,10 +285,10 @@ export default function HatModel({
     });
   }, [capMesh, hatColor, hatTexture]);
 
-  // Text positioning relative to bounding box center
-  const textY = center.y + size.y * 0.15;
-  const frontZ = center.z + size.z * 0.42;
-  const backZ = center.z - size.z * 0.42;
+  // Text positioning from mainCap bounding box (not the full scene with bill/straps)
+  const textY = mcCenter.y + mcSize.y * 0.12;
+  const frontZ = mcFrontZ + mcSize.z * 0.01;  // just in front of cap surface
+  const backZ = mcBackZ - mcSize.z * 0.01;    // just behind back surface
 
   const textMaterialProps = {
     transparent: true,
@@ -311,7 +324,7 @@ export default function HatModel({
         {frontTexture && (
           <mesh
             geometry={frontGeo}
-            position={[center.x, textY, frontZ]}
+            position={[mcCenter.x, textY, frontZ]}
             rotation={[-0.08, 0, 0]}
           >
             <meshStandardMaterial map={frontTexture} {...textMaterialProps} />
@@ -322,7 +335,7 @@ export default function HatModel({
         {backTexture && (
           <mesh
             geometry={backGeo}
-            position={[center.x, textY - size.y * 0.03, backZ]}
+            position={[mcCenter.x, textY - mcSize.y * 0.03, backZ]}
             rotation={[0.08, Math.PI, 0]}
           >
             <meshStandardMaterial map={backTexture} {...textMaterialProps} />
@@ -331,10 +344,10 @@ export default function HatModel({
 
         {/* Inside lid branding - only visible from underneath */}
         <mesh
-          position={[center.x, center.y - size.y * 0.1, center.z]}
+          position={[mcCenter.x, mcCenter.y - mcSize.y * 0.15, mcCenter.z]}
           rotation={[-Math.PI * 0.5, 0, 0]}
         >
-          <circleGeometry args={[size.x * 0.15, 32]} />
+          <circleGeometry args={[mcSize.x * 0.15, 32]} />
           <meshBasicMaterial
             map={lidTexture}
             side={THREE.BackSide}
