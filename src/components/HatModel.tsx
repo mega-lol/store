@@ -179,9 +179,6 @@ function makeTextTexture(
   const ctx = c.getContext('2d')!;
   ctx.clearRect(0, 0, c.width, c.height);
 
-  // Flip horizontally — decal projection mirrors the U axis
-  ctx.translate(c.width, 0);
-  ctx.scale(-1, 1);
 
   const x = c.width * 0.5;
   const lineCount = lines.length;
@@ -545,7 +542,7 @@ export default function HatModel({
     mcCenter.z + mcSize.z * 0.04,
   ];
 
-  const frontTextScale: [number, number, number] = [mcSize.x * 0.62, mcSize.y * 0.34, Math.max(mcSize.z * 0.42, 0.08)];
+  const frontTextScale: [number, number, number] = [mcSize.x * 0.74, mcSize.y * 0.40, Math.max(mcSize.z * 0.46, 0.09)];
   const backTextScale: [number, number, number] = [mcSize.x * 0.48, mcSize.y * 0.26, Math.max(mcSize.z * 0.34, 0.07)];
   const flagScale: [number, number, number] = [mcSize.x * 0.22, mcSize.y * 0.14, Math.max(mcSize.z * 0.25, 0.06)];
 

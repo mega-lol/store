@@ -35,8 +35,8 @@ export default function Index() {
     <main className="min-h-screen bg-white text-black overflow-x-hidden pt-12">
       {/* ─── HERO ─── */}
       <section className="relative h-[100dvh] -mt-12 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-50/60 via-white to-stone-50" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_50%,rgba(0,0,0,0.03)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-950 to-stone-950" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.14)_0%,transparent_55%)]" />
 
         {/* Hat preview */}
         <div className="absolute inset-0 animate-scale-in" style={{ opacity: 0 }}>
@@ -58,10 +58,10 @@ export default function Index() {
         {/* Headline */}
         <div className="absolute top-20 left-6 md:left-12 z-10 max-w-xl animate-fade-up delay-300" style={{ opacity: 0 }}>
           {/* tagline hidden for now */}
-          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter leading-[0.88] text-black/90">
+          <h1 className="text-5xl sm:text-6xl md:text-8xl lg:text-[7.5rem] font-black tracking-[-0.06em] leading-[0.84] text-white drop-shadow-[0_10px_45px_rgba(0,0,0,0.7)]">
             MAKE EARTH<br />GREAT AGAIN
           </h1>
-          <p className="mt-4 text-sm md:text-base text-black/40 leading-relaxed max-w-md">
+          <p className="mt-4 text-sm md:text-base text-white/55 leading-relaxed max-w-md">
             Join the movement. Wear the mission.
           </p>
         </div>
@@ -71,19 +71,19 @@ export default function Index() {
           <div className="flex items-center gap-3 flex-wrap">
             <button
               onClick={handleBuy}
-              className="h-11 px-8 rounded-full bg-black text-white text-xs tracking-[0.2em] uppercase font-bold hover:bg-black/80 transition-colors"
+              className="h-11 px-8 rounded-full bg-white text-black text-xs tracking-[0.2em] uppercase font-bold hover:bg-white/90 transition-colors shadow-[0_12px_44px_rgba(0,0,0,0.35)]"
             >
               Pre-order ${defaultPrice}
             </button>
             <Link
               to="/designer"
-              className="h-11 px-6 rounded-full border border-black/20 text-black/60 text-xs tracking-[0.2em] uppercase hover:text-black hover:border-black/40 transition-colors flex items-center"
+              className="h-11 px-6 rounded-full border border-white/25 text-white/75 text-xs tracking-[0.2em] uppercase hover:text-white hover:border-white/50 hover:bg-white/5 transition-colors flex items-center"
             >
               Design Your Own
             </Link>
             <a
               href="#movement"
-              className="h-11 px-6 rounded-full text-black/40 text-xs tracking-[0.2em] uppercase hover:text-black transition-colors flex items-center"
+              className="h-11 px-6 rounded-full text-white/55 text-xs tracking-[0.2em] uppercase hover:text-white hover:bg-white/5 transition-colors flex items-center"
             >
               Learn More
             </a>
@@ -91,7 +91,7 @@ export default function Index() {
         </div>
 
         <div className="absolute bottom-12 right-6 md:right-12 z-10 animate-fade-up delay-700" style={{ opacity: 0 }}>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-black/20">Drag to rotate</p>
+          <p className="text-[10px] tracking-[0.2em] uppercase text-white/35">Drag to rotate</p>
         </div>
       </section>
 
