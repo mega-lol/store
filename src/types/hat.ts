@@ -133,7 +133,7 @@ export const DEFAULT_HAT: HatConfig = {
   hatColor: '#FFFFFF',
   bandColor: '#D4A017',
   text: 'MAKE EARTH\nGREAT AGAIN',
-  backText: 'បង្កើតដើម្បorg If you look atorg If you look at If you look atorg If you look at If you look at',
+  backText: '',
   font: 'Vinegar',
   textColor: '#FFD700',
   textStyle: 'gold-embroidery',
