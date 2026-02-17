@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import HatScene from '@/components/HatScene';
 import { DEFAULT_HAT } from '@/types/hat';
+import { getHatPrice, useCart } from '@/store/cartStore';
 
 const config = DEFAULT_HAT;
 
@@ -46,6 +47,15 @@ const TRANSLATIONS = [
 export default function Index() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState<'in' | 'hold' | 'out'>('in');
+
+  const navigate = useNavigate();
+  const { addItem } = useCart();
+  const preorderPrice = getHatPrice(config);
+
+  const handlePreorder = () => {
+    addItem(config);
+    navigate('/cart');
+  };
 
   useEffect(() => {
     const FADE_IN = 600;
@@ -143,15 +153,16 @@ export default function Index() {
         {/* CTA */}
         <div className="absolute bottom-12 left-6 md:left-12 z-10 animate-fade-up delay-500" style={{ opacity: 0 }}>
           <div className="flex items-center gap-3 flex-wrap">
-            <Link
-              to="/collection"
-              className="h-11 px-8 rounded-full bg-white text-black text-xs tracking-[0.2em] uppercase font-bold hover:bg-white/90 transition-colors shadow-[0_12px_44px_rgba(0,0,0,0.35)] flex items-center"
+            <button
+              type="button"
+              onClick={handlePreorder}
+              className="h-11 px-8 rounded-full bg-white text-black text-xs tracking-[0.2em] uppercase font-black hover:bg-white/90 transition-colors shadow-[0_12px_44px_rgba(0,0,0,0.35)] flex items-center"
             >
-              Browse Collection
-            </Link>
+              Pre-order ${preorderPrice.toFixed(0)}
+            </button>
             <Link
               to="/designer"
-              className="h-11 px-8 rounded-full border border-white/25 text-white text-xs tracking-[0.2em] uppercase font-bold hover:border-white/50 hover:bg-white/5 transition-colors flex items-center"
+              className="h-11 px-8 rounded-full border border-white/25 text-white text-xs tracking-[0.2em] uppercase font-black hover:border-white/50 hover:bg-white/5 transition-colors flex items-center"
             >
               Design Your Own
             </Link>
@@ -240,7 +251,7 @@ export default function Index() {
               <div className="flex items-center gap-3 flex-wrap">
                 <Link
                   to="/designer"
-                  className="h-11 px-8 rounded-full bg-black text-white text-xs tracking-[0.2em] uppercase font-bold hover:bg-black/80 transition-colors flex items-center"
+                  className="h-11 px-8 rounded-full bg-black text-white text-xs tracking-[0.2em] uppercase font-black hover:bg-black/80 transition-colors flex items-center"
                 >
                   Open Designer
                 </Link>
@@ -289,7 +300,7 @@ export default function Index() {
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <a
               href="mailto:support@megamovement.org"
-              className="h-11 px-8 rounded-full bg-white text-black text-xs tracking-[0.2em] uppercase font-bold hover:bg-white/90 transition-colors inline-flex items-center"
+              className="h-11 px-8 rounded-full bg-white text-black text-xs tracking-[0.2em] uppercase font-black hover:bg-white/90 transition-colors inline-flex items-center"
             >
               Get Involved
             </a>

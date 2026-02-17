@@ -581,10 +581,18 @@ export default function HatModel({
     mcCenter.z + mcSize.z * 0.04,
   ];
 
-  const frontTextScale: [number, number, number] = [mcSize.x * 0.82, mcSize.y * 0.48, Math.max(mcSize.z * 0.8, 0.14)];
+  const frontTextScale: [number, number, number] = [mcSize.x * 0.9, mcSize.y * 0.55, Math.max(mcSize.z * 0.8, 0.14)];
   const backTextScale: [number, number, number] = [mcSize.x * 0.58, mcSize.y * 0.32, Math.max(mcSize.z * 0.5, 0.10)];
   const flagWidth = mcSize.x * 0.22;
-  const flagHeight = flagWidth * 0.75;
+  const flagImage = flagTexture?.image as { width?: number; height?: number } | undefined;
+  const flagAspect =
+    flagImage &&
+    typeof flagImage.width === 'number' &&
+    typeof flagImage.height === 'number' &&
+    flagImage.width > 0
+      ? flagImage.height / flagImage.width
+      : 0.75;
+  const flagHeight = flagWidth * flagAspect;
   const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 0.06)];
 
   return (

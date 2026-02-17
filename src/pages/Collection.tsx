@@ -105,7 +105,6 @@ export default function CollectionPage() {
                     font={hat.font}
                     flagCode={hat.flagCode}
                     decals={hat.decals}
-                    autoRotate
                     className="w-full h-full"
                   />
                 </div>
@@ -151,7 +150,6 @@ export default function CollectionPage() {
                     font={hat.font}
                     flagCode={hat.flagCode}
                     decals={hat.decals}
-                    autoRotate
                     className="w-full h-full"
                   />
                 </div>
