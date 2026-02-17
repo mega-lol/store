@@ -62,6 +62,7 @@ export default function Designer() {
             text={config.text}
             backText={config.backText}
             textColor={config.textColor}
+            textStyle={config.textStyle}
             font={config.font}
             flagCode={config.flagCode}
             decals={config.decals}

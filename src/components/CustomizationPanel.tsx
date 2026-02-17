@@ -3,9 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import ColorPicker from './ColorPicker';
-import { HatConfig, PRESET_HAT_COLORS, PRESET_TEXT_COLORS, Decal, COUNTRY_CODES, FONTS, DEFAULT_HAT } from '@/types/hat';
+import {
+  HatConfig, PRESET_HAT_COLORS, PRESET_TEXT_COLORS, Decal, COUNTRY_CODES,
+  FONTS, DEFAULT_HAT, TEXT_STYLES, PLACEMENT_ZONES, BUILT_IN_PRESETS,
+  DesignPreset, PlacementZone, TextStyle,
+} from '@/types/hat';
 import { useCart } from '@/store/cartStore';
-import { ShoppingCart, Share2, Plus, Trash2, Upload, Image as ImageIcon, Type, RotateCw, Move } from 'lucide-react';
+import { ShoppingCart, Share2, Plus, Trash2, Upload, Image as ImageIcon, Type, RotateCw, Move, Sparkles, Save, FolderOpen, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { applySiteFont, ensureFontLoaded, toFontStack } from '@/lib/fonts';
 import { v4 as uuidv4 } from 'uuid';
@@ -302,6 +306,81 @@ export default function CustomizationPanel({
     if (selectedDecalId === id) onSelectDecal?.(null);
   };
 
+  // Zone-based placement positions (pre-calculated for baseball cap model)
+  const ZONE_POSITIONS: Record<PlacementZone, { position: [number, number, number]; rotation: [number, number, number]; normal: [number, number, number] }> = {
+    'front':      { position: [0, 0.50, 0.84],    rotation: [0, 0, 0],        normal: [0, 0, 1] },
+    'back':       { position: [0, 0.47, -0.84],   rotation: [0, Math.PI, 0],  normal: [0, 0, -1] },
+    'left':       { position: [-0.72, 0.48, 0.10], rotation: [0, -Math.PI/2, 0], normal: [-1, 0, 0] },
+    'right':      { position: [0.72, 0.48, 0.10],  rotation: [0, Math.PI/2, 0],  normal: [1, 0, 0] },
+    'brim-top':   { position: [0, 0.28, 0.80],    rotation: [-Math.PI/3, 0, 0], normal: [0, 0.5, 0.87] },
+    'brim-under': { position: [0, 0.22, 0.70],    rotation: [Math.PI/3, 0, 0],  normal: [0, -0.5, 0.87] },
+    'rear-seam':  { position: [0, 0.58, -0.70],   rotation: [0, Math.PI, 0],  normal: [0, 0.2, -1] },
+    'inside':     { position: [0, 0.30, 0.50],    rotation: [-0.3, 0, 0],     normal: [0, -1, 0] },
+  };
+
+  const addDecalAtZone = (zone: PlacementZone) => {
+    const zoneData = ZONE_POSITIONS[zone];
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      const newDecal: Decal = {
+        id: uuidv4(),
+        type: 'image',
+        url: URL.createObjectURL(file),
+        position: zoneData.position,
+        rotation: zoneData.rotation,
+        scale: [0.18, 0.18, 0.18],
+        normal: zoneData.normal,
+        spin: 0,
+        zone,
+      };
+      update({ decals: [...config.decals, newDecal] });
+      onSelectDecal?.(newDecal.id);
+      toast({ title: `Decal added: ${PLACEMENT_ZONES.find(z => z.value === zone)?.label}`, description: 'Image placed at zone position.' });
+    };
+    input.click();
+  };
+
+  // Presets management
+  const loadPreset = (preset: DesignPreset) => {
+    onChange({
+      ...preset.config,
+      id: crypto.randomUUID(),
+      decals: preset.config.decals || [],
+    });
+    onSelectDecal?.(null);
+    toast({ title: 'Preset Loaded', description: `"${preset.name}" applied.` });
+  };
+
+  const getSavedPresets = (): DesignPreset[] => {
+    try {
+      const raw = localStorage.getItem('mega_user_presets_v1');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  };
+
+  const saveAsPreset = () => {
+    const name = prompt('Preset name:');
+    if (!name) return;
+    const preset: DesignPreset = {
+      id: crypto.randomUUID(),
+      name,
+      config: { ...config },
+    };
+    const existing = getSavedPresets();
+    localStorage.setItem('mega_user_presets_v1', JSON.stringify([preset, ...existing].slice(0, 50)));
+    toast({ title: 'Preset Saved', description: `"${name}" saved to your presets.` });
+  };
+
+  const deleteUserPreset = (id: string) => {
+    const existing = getSavedPresets();
+    localStorage.setItem('mega_user_presets_v1', JSON.stringify(existing.filter(p => p.id !== id)));
+    toast({ title: 'Preset Deleted' });
+  };
+
   const selectedDecal = config.decals.find(d => d.id === selectedDecalId);
 
   return (
@@ -313,11 +392,12 @@ export default function CustomizationPanel({
 
       <div className="flex-1 overflow-y-auto p-5 pt-0 space-y-6">
         <Tabs defaultValue="base" className="w-full">
-          <TabsList className="w-full grid grid-cols-4 bg-white/5 mb-4">
+          <TabsList className="w-full grid grid-cols-5 bg-white/5 mb-4">
             <TabsTrigger value="base">Base</TabsTrigger>
             <TabsTrigger value="text">Text</TabsTrigger>
             <TabsTrigger value="canvas">Canvas</TabsTrigger>
             <TabsTrigger value="decals">Decals</TabsTrigger>
+            <TabsTrigger value="presets">Presets</TabsTrigger>
           </TabsList>
 
           <TabsContent value="base" className="space-y-5">
@@ -416,6 +496,25 @@ export default function CustomizationPanel({
           </TabsContent>
 
           <TabsContent value="text" className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Text Style</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {TEXT_STYLES.map(style => (
+                  <button
+                    key={style.value}
+                    onClick={() => update({ textStyle: style.value })}
+                    className={`h-8 text-[10px] border transition-colors ${
+                      config.textStyle === style.value
+                        ? 'border-yellow-400/80 bg-yellow-400/10 text-yellow-300'
+                        : 'border-white/10 text-white/40 hover:border-white/30'
+                    }`}
+                  >
+                    {style.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <ColorPicker
               label="Text Color"
               value={config.textColor}
@@ -668,6 +767,23 @@ export default function CustomizationPanel({
             </div>
 
             <div className="space-y-2">
+              <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Quick Placement Zones</label>
+              <div className="grid grid-cols-4 gap-1">
+                {PLACEMENT_ZONES.map(zone => (
+                  <button
+                    key={zone.value}
+                    onClick={() => addDecalAtZone(zone.value)}
+                    className="h-7 text-[9px] border border-white/10 text-white/40 hover:border-white/30 hover:text-white/70 transition-colors truncate px-1"
+                    title={zone.label}
+                  >
+                    {zone.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[9px] text-white/20">Click a zone to add an image decal at that position</p>
+            </div>
+
+            <div className="space-y-2">
               <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Layers</label>
               {config.decals.length === 0 && (
                 <p className="text-sm text-white/20 text-center py-4 italic">No decals added yet</p>
@@ -743,6 +859,33 @@ export default function CustomizationPanel({
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/40 uppercase">Jump to Zone</label>
+                  <div className="grid grid-cols-4 gap-1">
+                    {PLACEMENT_ZONES.map(zone => (
+                      <button
+                        key={zone.value}
+                        onClick={() => {
+                          const zoneData = ZONE_POSITIONS[zone.value];
+                          updateDecal(selectedDecal.id, {
+                            position: zoneData.position,
+                            normal: zoneData.normal,
+                            zone: zone.value,
+                          });
+                        }}
+                        className={`h-6 text-[8px] border transition-colors truncate px-0.5 ${
+                          selectedDecal.zone === zone.value
+                            ? 'border-yellow-400/50 text-yellow-300 bg-yellow-400/10'
+                            : 'border-white/10 text-white/30 hover:border-white/30'
+                        }`}
+                        title={zone.label}
+                      >
+                        {zone.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <Button
                   variant="outline"
                   className="w-full h-8 text-[10px] border-white/20 text-white/70"
@@ -757,6 +900,81 @@ export default function CustomizationPanel({
                 </p>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="presets" className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Built-in Presets</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                {BUILT_IN_PRESETS.map(preset => (
+                  <button
+                    key={preset.id}
+                    onClick={() => loadPreset(preset)}
+                    className="h-10 text-[10px] border border-white/10 text-white/60 hover:border-yellow-400/40 hover:text-yellow-300 transition-colors px-2 text-left truncate"
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Your Presets</label>
+                <button
+                  onClick={saveAsPreset}
+                  className="text-[10px] text-white/40 hover:text-white flex items-center gap-1"
+                >
+                  <Save className="h-3 w-3" /> Save Current
+                </button>
+              </div>
+              {getSavedPresets().length === 0 ? (
+                <p className="text-[10px] text-white/20 text-center py-3 italic">No saved presets yet</p>
+              ) : (
+                <div className="space-y-1">
+                  {getSavedPresets().map(preset => (
+                    <div
+                      key={preset.id}
+                      className="flex items-center justify-between p-2 border border-white/5 hover:border-white/20 cursor-pointer transition-colors"
+                      onClick={() => loadPreset(preset)}
+                    >
+                      <span className="text-xs text-white/70 truncate">{preset.name}</span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); deleteUserPreset(preset.id); }}
+                        className="text-white/20 hover:text-red-400"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border border-white/10 p-3 space-y-2">
+              <div className="flex items-center gap-2 text-white/60">
+                <Sparkles className="h-4 w-4 text-yellow-400" />
+                <span className="text-xs font-bold uppercase tracking-wider">AI Design</span>
+              </div>
+              <p className="text-[10px] text-white/30 leading-relaxed">
+                Generate designs, change textures, and create images with AI.
+                Requires a Hanzo AI subscription.
+              </p>
+              <a
+                href="https://hanzo.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <Button
+                  variant="outline"
+                  className="w-full h-9 text-[10px] border-yellow-400/30 text-yellow-300 hover:bg-yellow-400/10 hover:border-yellow-400/50 tracking-wider uppercase"
+                >
+                  <Wand2 className="h-3 w-3 mr-2" />
+                  Subscribe to Hanzo AI
+                </Button>
+              </a>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

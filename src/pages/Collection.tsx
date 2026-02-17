@@ -1,33 +1,35 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import HatScene from '@/components/HatScene';
-import { COUNTRY_HATS, COUNTRY_CODES, HatConfig } from '@/types/hat';
+import { COUNTRY_HATS, COUNTRY_CODES, HatConfig, DEFAULT_BACK_DECALS } from '@/types/hat';
 import { getHatPrice } from '@/store/cartStore';
 
 const coreEditions: HatConfig[] = [
   {
-    id: 'white-black',
+    id: 'mega-gold',
     hatColor: '#FFFFFF',
-    bandColor: '#FFFFFF',
-    text: 'WHITE HAT',
-    backText: 'STANDARD',
+    bandColor: '#DAA520',
+    text: 'MAKE EARTH\nGREAT AGAIN',
+    backText: '',
     font: 'Vinegar',
-    textColor: '#000000',
+    textColor: '#FFD700',
+    textStyle: 'gold-embroidery',
     size: 'M',
     flagCode: undefined,
-    decals: [],
+    decals: [...DEFAULT_BACK_DECALS],
   },
   {
-    id: 'black-white',
+    id: 'mega-black-gold',
     hatColor: '#000000',
     bandColor: '#000000',
-    text: 'BLACK HAT',
-    backText: 'DARK',
+    text: 'MAKE EARTH\nGREAT AGAIN',
+    backText: '',
     font: 'Vinegar',
-    textColor: '#FFFFFF',
+    textColor: '#FFD700',
+    textStyle: 'gold-embroidery',
     size: 'M',
     flagCode: undefined,
-    decals: [],
+    decals: [...DEFAULT_BACK_DECALS],
   },
   {
     id: 'white-white',
@@ -37,6 +39,7 @@ const coreEditions: HatConfig[] = [
     backText: 'WHITEOUT',
     font: 'Vinegar',
     textColor: '#FFFFFF',
+    textStyle: 'embroidery',
     size: 'M',
     flagCode: undefined,
     decals: [],
@@ -49,6 +52,7 @@ const coreEditions: HatConfig[] = [
     backText: 'BLACKOUT',
     font: 'Vinegar',
     textColor: '#000000',
+    textStyle: 'embroidery',
     size: 'M',
     flagCode: undefined,
     decals: [],
@@ -68,7 +72,7 @@ export default function CollectionPage() {
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-4">Catalog</p>
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[0.9] mb-4">MEGA</h1>
           <p className="text-sm text-white/40 max-w-xl leading-relaxed">
-            Launch product is a baseball cap. White + black and black + white are standard $50 editions.
+            MAKE EARTH GREAT AGAIN. Gold embroidery on premium ball caps.
             White-on-white and black-on-black are special $80 editions.
           </p>
         </div>
@@ -98,8 +102,10 @@ export default function CollectionPage() {
                     text={hat.text}
                     backText={hat.backText}
                     textColor={hat.textColor}
+                    textStyle={hat.textStyle}
                     font={hat.font}
                     flagCode={hat.flagCode}
+                    decals={hat.decals}
                     autoRotate
                     className="w-full h-full"
                   />
@@ -139,8 +145,10 @@ export default function CollectionPage() {
                     text={hat.text}
                     backText={hat.backText}
                     textColor={hat.textColor}
+                    textStyle={hat.textStyle}
                     font={hat.font}
                     flagCode={hat.flagCode}
+                    decals={hat.decals}
                     autoRotate
                     className="w-full h-full"
                   />

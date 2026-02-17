@@ -1,5 +1,15 @@
 export type DecalType = 'image' | 'text';
 
+export type PlacementZone =
+  | 'front'
+  | 'back'
+  | 'left'
+  | 'right'
+  | 'brim-top'
+  | 'brim-under'
+  | 'rear-seam'
+  | 'inside';
+
 export interface Decal {
   id: string;
   type: DecalType;
@@ -12,9 +22,12 @@ export interface Decal {
   scale: [number, number, number];
   normal?: [number, number, number];
   spin?: number;
+  zone?: PlacementZone;
   targetMeshName?: string;
   targetParentName?: string;
 }
+
+export type TextStyle = 'flat' | 'embroidery' | 'gold-embroidery' | 'puff-3d';
 
 export interface HatConfig {
   id: string;
@@ -25,11 +38,19 @@ export interface HatConfig {
   backText?: string;
   font: string;
   textColor: string;
+  textStyle: TextStyle;
   size: 'S' | 'M' | 'L' | 'XL';
   countryCode?: string;
   countryName?: string;
   flagCode?: string;
   decals: Decal[];
+}
+
+export interface DesignPreset {
+  id: string;
+  name: string;
+  thumbnail?: string;
+  config: HatConfig;
 }
 
 export interface CountryHat extends HatConfig {
@@ -58,22 +79,167 @@ export const PRESET_HAT_COLORS = [
 ];
 
 export const PRESET_TEXT_COLORS = [
-  '#FFFFFF', '#F0F0F0', '#FFD700', '#CC0000',
+  '#FFD700', '#FFFFFF', '#F0F0F0', '#CC0000',
   '#C0C0C0', '#000000',
+];
+
+export const TEXT_STYLES: { value: TextStyle; label: string }[] = [
+  { value: 'flat', label: 'Flat Print' },
+  { value: 'embroidery', label: 'Embroidery' },
+  { value: 'gold-embroidery', label: 'Gold Embroidery' },
+  { value: 'puff-3d', label: '3D Puff' },
+];
+
+export const PLACEMENT_ZONES: { value: PlacementZone; label: string }[] = [
+  { value: 'front', label: 'Front Center' },
+  { value: 'back', label: 'Back Center' },
+  { value: 'left', label: 'Left Side' },
+  { value: 'right', label: 'Right Side' },
+  { value: 'brim-top', label: 'Brim Top' },
+  { value: 'brim-under', label: 'Under Brim' },
+  { value: 'rear-seam', label: 'Rear Seam' },
+  { value: 'inside', label: 'Inside Band' },
+];
+
+const BASE_URL = import.meta.env.BASE_URL || '/';
+
+export const DEFAULT_BACK_DECALS: Decal[] = [
+  {
+    id: 'default-bird-panda',
+    type: 'image',
+    url: `${BASE_URL}images/bird_panda_decal.png`,
+    position: [0.30, 0.46, -0.78],
+    rotation: [0, Math.PI, 0],
+    scale: [0.26, 0.26, 0.26],
+    normal: [0, 0, -1],
+    spin: Math.PI,
+    zone: 'back',
+  },
+  {
+    id: 'default-patch7',
+    type: 'image',
+    url: `${BASE_URL}images/patch7_decal.png`,
+    position: [-0.30, 0.46, -0.78],
+    rotation: [0, Math.PI, 0],
+    scale: [0.20, 0.20, 0.20],
+    normal: [0, 0, -1],
+    spin: Math.PI,
+    zone: 'back',
+  },
 ];
 
 export const DEFAULT_HAT: HatConfig = {
   id: '',
   hatColor: '#FFFFFF',
-  bandColor: '#FFFFFF',
-  text: 'YOUR BRAND',
+  bandColor: '#D4A017',
+  text: 'MAKE EARTH\nGREAT AGAIN',
   backText: '',
   font: 'Vinegar',
-  textColor: '#000000',
+  textColor: '#FFD700',
+  textStyle: 'gold-embroidery',
   size: 'M',
   flagCode: undefined,
-  decals: [],
+  decals: [...DEFAULT_BACK_DECALS],
 };
+
+export const BUILT_IN_PRESETS: DesignPreset[] = [
+  {
+    id: 'mega-gold',
+    name: 'MEGA Gold',
+    config: {
+      id: 'mega-gold',
+      hatColor: '#FFFFFF',
+      bandColor: '#D4A017',
+      text: 'MAKE EARTH\nGREAT AGAIN',
+      backText: '',
+      font: 'Vinegar',
+      textColor: '#FFD700',
+      textStyle: 'gold-embroidery',
+      size: 'M',
+      decals: [...DEFAULT_BACK_DECALS],
+    },
+  },
+  {
+    id: 'mega-classic-black',
+    name: 'MEGA Classic Black',
+    config: {
+      id: 'mega-classic-black',
+      hatColor: '#000000',
+      bandColor: '#000000',
+      text: 'MAKE EARTH\nGREAT AGAIN',
+      backText: '',
+      font: 'Vinegar',
+      textColor: '#FFD700',
+      textStyle: 'gold-embroidery',
+      size: 'M',
+      decals: [...DEFAULT_BACK_DECALS],
+    },
+  },
+  {
+    id: 'mega-red',
+    name: 'MEGA Red',
+    config: {
+      id: 'mega-red',
+      hatColor: '#CC0000',
+      bandColor: '#CC0000',
+      text: 'MAKE EARTH\nGREAT AGAIN',
+      backText: '',
+      font: 'Vinegar',
+      textColor: '#FFD700',
+      textStyle: 'gold-embroidery',
+      size: 'M',
+      decals: [...DEFAULT_BACK_DECALS],
+    },
+  },
+  {
+    id: 'peace-dove',
+    name: 'Peace Dove',
+    config: {
+      id: 'peace-dove',
+      hatColor: '#FFFFFF',
+      bandColor: '#FFFFFF',
+      text: 'PEACE',
+      backText: '',
+      font: 'Vinegar',
+      textColor: '#FFD700',
+      textStyle: 'gold-embroidery',
+      size: 'M',
+      decals: [],
+    },
+  },
+  {
+    id: 'whiteout',
+    name: 'Whiteout ($80)',
+    config: {
+      id: 'whiteout',
+      hatColor: '#FFFFFF',
+      bandColor: '#FFFFFF',
+      text: 'WHITEOUT',
+      backText: 'WHITEOUT',
+      font: 'Vinegar',
+      textColor: '#FFFFFF',
+      textStyle: 'flat',
+      size: 'M',
+      decals: [],
+    },
+  },
+  {
+    id: 'blackout',
+    name: 'Blackout ($80)',
+    config: {
+      id: 'blackout',
+      hatColor: '#000000',
+      bandColor: '#000000',
+      text: 'BLACKOUT',
+      backText: 'BLACKOUT',
+      font: 'Vinegar',
+      textColor: '#000000',
+      textStyle: 'flat',
+      size: 'M',
+      decals: [],
+    },
+  },
+];
 
 export const COUNTRY_HATS: CountryHat[] = [
   {
@@ -84,6 +250,7 @@ export const COUNTRY_HATS: CountryHat[] = [
     backText: 'INDIA',
     font: 'Vinegar',
     textColor: '#000080',
+    textStyle: 'embroidery',
     size: 'M',
     countryCode: 'IN',
     countryName: 'India',
@@ -98,6 +265,7 @@ export const COUNTRY_HATS: CountryHat[] = [
     backText: 'IRAN',
     font: 'Vinegar',
     textColor: '#ffffff',
+    textStyle: 'embroidery',
     size: 'M',
     countryCode: 'IR',
     countryName: 'Iran',
@@ -112,6 +280,7 @@ export const COUNTRY_HATS: CountryHat[] = [
     backText: 'CAMBODIA',
     font: 'Vinegar',
     textColor: '#ffffff',
+    textStyle: 'embroidery',
     size: 'M',
     countryCode: 'KH',
     countryName: 'Cambodia',
@@ -126,6 +295,7 @@ export const COUNTRY_HATS: CountryHat[] = [
     backText: 'UKRAINE',
     font: 'Vinegar',
     textColor: '#FFD700',
+    textStyle: 'gold-embroidery',
     size: 'M',
     countryCode: 'UA',
     countryName: 'Ukraine',

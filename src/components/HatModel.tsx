@@ -2,7 +2,7 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree, useLoader, ThreeEvent } from '@react-three/fiber';
 import { useGLTF, Decal as ProjectedDecal } from '@react-three/drei';
 import * as THREE from 'three';
-import { Decal as HatDecal } from '@/types/hat';
+import { Decal as HatDecal, TextStyle } from '@/types/hat';
 import { toFontStack } from '@/lib/fonts';
 import DecalLayer from './DecalLayer';
 
@@ -13,6 +13,7 @@ interface HatModelProps {
   text: string;
   backText?: string;
   textColor: string;
+  textStyle?: TextStyle;
   fontFamily?: string;
   flagCode?: string;
   decals?: HatDecal[];
@@ -28,17 +29,159 @@ const MODEL_PATH = `${import.meta.env.BASE_URL}models/baseball_cap.glb`;
 const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 const FABRIC_MATERIALS = new Set(['baseballCap', 'baseballcap', 'cap', 'hat', 'fabric']);
 
+function drawEmbroideryStitch(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  fontSize: number,
+  color: string,
+) {
+  // Simulate embroidery thread with multiple offset passes
+  const offsets = [
+    { dx: 0, dy: -1.5, alpha: 0.3 },
+    { dx: -1, dy: -1, alpha: 0.2 },
+    { dx: 1, dy: -1, alpha: 0.2 },
+    { dx: 0, dy: 1.5, alpha: 0.15 },
+  ];
+
+  for (const { dx, dy, alpha } of offsets) {
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#000000';
+    ctx.fillText(text, x + dx, y + dy);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+
+function drawGoldEmbroidery(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  fontSize: number,
+) {
+  // Vivid saturated gold gradient
+  const goldGrad = ctx.createLinearGradient(0, y - fontSize * 0.6, 0, y + fontSize * 0.6);
+  goldGrad.addColorStop(0, '#FFE850');    // Bright yellow highlight
+  goldGrad.addColorStop(0.15, '#FFD000'); // Vivid gold
+  goldGrad.addColorStop(0.35, '#E8A000'); // Deep rich gold
+  goldGrad.addColorStop(0.5, '#FFD000');  // Vivid gold center
+  goldGrad.addColorStop(0.65, '#CC8800'); // Warm amber
+  goldGrad.addColorStop(0.85, '#FFD000'); // Vivid gold
+  goldGrad.addColorStop(1, '#FFE850');    // Bright yellow bottom
+
+  // Embossed: deep shadow layers for raised 3D look
+  for (let i = 5; i >= 1; i--) {
+    ctx.globalAlpha = 0.3 + (5 - i) * 0.06;
+    ctx.fillStyle = '#1A0E00';
+    ctx.fillText(text, x + i * 0.5, y + i * 1.4);
+  }
+
+  // Side emboss depth
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = '#3D2200';
+  ctx.fillText(text, x + 1.5, y + fontSize * 0.05);
+  ctx.fillText(text, x + 1, y + fontSize * 0.07);
+
+  // Thread texture: tight stitch simulation
+  ctx.globalAlpha = 0.1;
+  ctx.fillStyle = '#000000';
+  for (let sdy = -2; sdy <= 2; sdy += 2) {
+    for (let sdx = -2; sdx <= 2; sdx += 2) {
+      if (sdx === 0 && sdy === 0) continue;
+      ctx.fillText(text, x + sdx, y + sdy);
+    }
+  }
+
+  // Main gold fill — full opacity, double-stamped for richness
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = goldGrad;
+  ctx.fillText(text, x, y);
+  ctx.fillText(text, x, y);
+
+  // Saturated yellow overlay for pop
+  ctx.globalAlpha = 0.5;
+  ctx.fillStyle = '#FFD700';
+  ctx.fillText(text, x, y);
+
+  // Top-edge highlight for embossed bevel
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = '#FFF8C0';
+  ctx.fillText(text, x, y - fontSize * 0.025);
+
+  // Bright metallic shine band across center
+  ctx.save();
+  ctx.globalAlpha = 0.3;
+  const shineGrad = ctx.createLinearGradient(0, y - fontSize * 0.2, 0, y + fontSize * 0.1);
+  shineGrad.addColorStop(0, 'rgba(255,255,255,0)');
+  shineGrad.addColorStop(0.35, 'rgba(255,255,220,0.9)');
+  shineGrad.addColorStop(0.55, 'rgba(255,240,160,0.6)');
+  shineGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shineGrad;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+
+  // Crisp dark-gold outline for definition
+  ctx.globalAlpha = 0.8;
+  ctx.strokeStyle = '#9B7018';
+  ctx.lineWidth = Math.max(2.5, fontSize * 0.018);
+  ctx.lineJoin = 'round';
+  ctx.strokeText(text, x, y);
+  ctx.globalAlpha = 1;
+}
+
+function draw3DPuff(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  fontSize: number,
+  color: string,
+) {
+  // Deep shadow for 3D raised look
+  for (let i = 6; i >= 1; i--) {
+    ctx.globalAlpha = 0.15 + (6 - i) * 0.05;
+    ctx.fillStyle = '#000000';
+    ctx.fillText(text, x, y + i * 1.5);
+  }
+
+  // Side depth
+  ctx.globalAlpha = 0.3;
+  ctx.fillStyle = '#222222';
+  for (let i = 3; i >= 1; i--) {
+    ctx.fillText(text, x + i * 0.5, y + i * 1.2);
+  }
+
+  // Main color
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+
+  // Top highlight
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(text, x, y - fontSize * 0.02);
+  ctx.globalAlpha = 1;
+}
+
 function makeTextTexture(
   lines: string[],
   textColor: string,
   renderer: THREE.WebGLRenderer,
   fontFamily?: string,
+  textStyle: TextStyle = 'flat',
 ): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = 2048;
   c.height = 1024;
   const ctx = c.getContext('2d')!;
   ctx.clearRect(0, 0, c.width, c.height);
+
+  // Flip horizontally — decal projection mirrors the U axis
+  ctx.translate(c.width, 0);
+  ctx.scale(-1, 1);
 
   const x = c.width * 0.5;
   const lineCount = lines.length;
@@ -78,22 +221,33 @@ function makeTextTexture(
 
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = textColor;
-  ctx.strokeStyle = textColor.toLowerCase() === '#ffffff' || textColor.toLowerCase() === '#fff'
-    ? 'rgba(0,0,0,0.35)'
-    : 'rgba(255,255,255,0.22)';
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = Math.max(6, fontSize * 0.08);
   ctx.font = finalFont;
+
   lines.forEach((t, i) => {
     const y = y0 + i * dy;
-    ctx.strokeText(t, x, y);
-    ctx.fillText(t, x, y);
+
+    if (textStyle === 'gold-embroidery') {
+      drawGoldEmbroidery(ctx, t, x, y, fontSize);
+    } else if (textStyle === 'embroidery') {
+      drawEmbroideryStitch(ctx, t, x, y, fontSize, textColor);
+    } else if (textStyle === 'puff-3d') {
+      draw3DPuff(ctx, t, x, y, fontSize, textColor);
+    } else {
+      // flat style (original)
+      ctx.fillStyle = textColor;
+      ctx.strokeStyle = textColor.toLowerCase() === '#ffffff' || textColor.toLowerCase() === '#fff'
+        ? 'rgba(0,0,0,0.35)'
+        : 'rgba(255,255,255,0.22)';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(6, fontSize * 0.08);
+      ctx.strokeText(t, x, y);
+      ctx.fillText(t, x, y);
+    }
   });
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.flipY = false;
+  tex.flipY = true;
   tex.generateMipmaps = true;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
   tex.magFilter = THREE.LinearFilter;
@@ -113,6 +267,7 @@ export default function HatModel({
   text,
   backText,
   textColor,
+  textStyle = 'flat',
   fontFamily,
   flagCode,
   decals = [],
@@ -268,14 +423,14 @@ export default function HatModel({
   const frontTexture = useMemo(() => {
     const lines = (text || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
-    return makeTextTexture(lines, textColor, gl, fontFamily);
-  }, [text, textColor, gl, fontFamily]);
+    return makeTextTexture(lines, textColor, gl, fontFamily, textStyle);
+  }, [text, textColor, gl, fontFamily, textStyle]);
 
   const backTexture = useMemo(() => {
     const lines = (backText || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
-    return makeTextTexture(lines, textColor, gl, fontFamily);
-  }, [backText, textColor, gl, fontFamily]);
+    return makeTextTexture(lines, textColor, gl, fontFamily, textStyle);
+  }, [backText, textColor, gl, fontFamily, textStyle]);
 
   useEffect(() => {
     capMesh.traverse((child) => {
@@ -426,8 +581,10 @@ export default function HatModel({
               polygonOffset
               polygonOffsetFactor={-2}
               polygonOffsetUnits={-2}
-              roughness={0.65}
-              metalness={0.05}
+              roughness={textStyle === 'gold-embroidery' ? 0.18 : textStyle === 'puff-3d' ? 0.45 : 0.65}
+              metalness={textStyle === 'gold-embroidery' ? 0.85 : textStyle === 'puff-3d' ? 0.15 : 0.05}
+              emissive={textStyle === 'gold-embroidery' ? '#6B4500' : '#000000'}
+              emissiveIntensity={textStyle === 'gold-embroidery' ? 0.35 : 0}
             />
           </ProjectedDecal>
         )}
@@ -448,8 +605,10 @@ export default function HatModel({
               polygonOffset
               polygonOffsetFactor={-2}
               polygonOffsetUnits={-2}
-              roughness={0.65}
-              metalness={0.05}
+              roughness={textStyle === 'gold-embroidery' ? 0.18 : textStyle === 'puff-3d' ? 0.45 : 0.65}
+              metalness={textStyle === 'gold-embroidery' ? 0.85 : textStyle === 'puff-3d' ? 0.15 : 0.05}
+              emissive={textStyle === 'gold-embroidery' ? '#6B4500' : '#000000'}
+              emissiveIntensity={textStyle === 'gold-embroidery' ? 0.35 : 0}
             />
           </ProjectedDecal>
         )}

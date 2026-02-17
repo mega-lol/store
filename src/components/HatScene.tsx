@@ -4,7 +4,7 @@ import HatModel from './HatModel';
 import { Suspense } from 'react';
 import * as THREE from 'three';
 
-import { Decal } from '@/types/hat';
+import { Decal, TextStyle } from '@/types/hat';
 
 interface HatSceneProps {
   hatColor: string;
@@ -13,6 +13,7 @@ interface HatSceneProps {
   text: string;
   backText?: string;
   textColor: string;
+  textStyle?: TextStyle;
   font?: string;
   flagCode?: string;
   decals?: Decal[];
@@ -49,6 +50,7 @@ export default function HatScene({
   text,
   backText,
   textColor,
+  textStyle,
   font,
   flagCode,
   decals,
@@ -85,6 +87,7 @@ export default function HatScene({
             text={text}
             backText={backText}
             textColor={textColor}
+            textStyle={textStyle}
             fontFamily={font}
             flagCode={flagCode}
             decals={decals}
@@ -106,6 +109,7 @@ export default function HatScene({
             target={[0, 0.08, 0]}
             enabled={!placementMode}
             enablePan={false}
+            enableZoom={!autoRotate}
             minDistance={1.8}
             maxDistance={5}
             enableDamping
