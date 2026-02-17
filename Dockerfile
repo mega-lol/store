@@ -1,9 +1,11 @@
 FROM node:20-alpine AS builder
 
+RUN corepack enable && corepack prepare pnpm@10 --activate
+
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
@@ -20,7 +22,7 @@ ENV VITE_HANZO_ORG=$VITE_HANZO_ORG
 ENV VITE_HANZO_PROJECT=$VITE_HANZO_PROJECT
 ENV VITE_ADXYZ_HOME_URL=$VITE_ADXYZ_HOME_URL
 
-RUN npm run build
+RUN pnpm build
 
 FROM nginx:1.27-alpine
 

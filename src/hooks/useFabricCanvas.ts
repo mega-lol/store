@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { Canvas as FabricCanvas, FabricText } from 'fabric';
 import { EmbroideryText } from '@/lib/fabricEmbroidery';
 import type { TextStyle } from '@/types/hat';
@@ -22,6 +22,7 @@ export interface FabricCanvasHandle {
 const CANVAS_SIZE = 2048;
 
 export default function useFabricCanvas(hatColor: string): FabricCanvasHandle {
+  const [canvas, setCanvas] = useState<FabricCanvas | null>(null);
   const canvasRef = useRef<FabricCanvas | null>(null);
   const elRef = useRef<HTMLCanvasElement | null>(null);
   const textObjRef = useRef<FabricText | null>(null);
@@ -44,10 +45,12 @@ export default function useFabricCanvas(hatColor: string): FabricCanvasHandle {
     });
 
     canvasRef.current = fc;
+    setCanvas(fc);
 
     return () => {
       fc.dispose();
       canvasRef.current = null;
+      setCanvas(null);
       elRef.current = null;
       textObjRef.current = null;
     };
@@ -172,7 +175,7 @@ export default function useFabricCanvas(hatColor: string): FabricCanvasHandle {
   }, []);
 
   return {
-    canvas: canvasRef.current,
+    canvas,
     setText,
     clear,
     getElement,
