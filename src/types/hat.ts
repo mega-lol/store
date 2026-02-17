@@ -108,7 +108,7 @@ export const DEFAULT_BACK_DECALS: Decal[] = [
   {
     id: 'default-bird-panda',
     type: 'image',
-    url: `${BASE_URL}images/bird_panda_decal.png`,
+    url: `${BASE_URL}images/bird_panda_embroidery.png`,
     position: [0.30, 0.46, -0.78],
     rotation: [0, Math.PI, 0],
     scale: [0.26, 0.26, 0.26],
