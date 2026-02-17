@@ -8,10 +8,13 @@ import { Decal } from '@/types/hat';
 
 interface HatSceneProps {
   hatColor: string;
+  bandColor?: string;
   texture?: string;
   text: string;
   backText?: string;
   textColor: string;
+  font?: string;
+  flagCode?: string;
   decals?: Decal[];
   onDecalUpdate?: (id: string, updates: Partial<Decal>) => void;
   selectedDecalId?: string;
@@ -39,10 +42,13 @@ function Lights() {
 
 export default function HatScene({
   hatColor,
+  bandColor,
   texture,
   text,
   backText,
   textColor,
+  font,
+  flagCode,
   decals,
   onDecalUpdate,
   selectedDecalId,
@@ -70,10 +76,13 @@ export default function HatScene({
           <Lights />
           <HatModel
             hatColor={hatColor}
+            bandColor={bandColor}
             texture={texture}
             text={text}
             backText={backText}
             textColor={textColor}
+            fontFamily={font}
+            flagCode={flagCode}
             decals={decals}
             onDecalUpdate={onDecalUpdate}
             selectedDecalId={selectedDecalId}

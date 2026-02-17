@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCart, PRICE_PER_HAT } from '@/store/cartStore';
+import { useCart, getHatPrice } from '@/store/cartStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -60,7 +60,7 @@ export default function Cart() {
                   <Plus className="h-3 w-3" />
                 </Button>
               </div>
-              <p className="font-semibold w-20 text-right">${(item.quantity * PRICE_PER_HAT).toFixed(2)}</p>
+              <p className="font-semibold w-20 text-right">${(item.quantity * getHatPrice(item.hat)).toFixed(2)}</p>
               <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeItem(item.hat.id)}>
                 <Trash2 className="h-4 w-4" />
               </Button>

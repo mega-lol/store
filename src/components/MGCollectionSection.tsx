@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { VoteCounter } from '@/components/VoteCounter';
 import HatScene from './HatScene';
-import { COUNTRY_MG_HATS } from '@/types/hat';
+import { COUNTRY_HATS } from '@/types/hat';
 
-export default function MGCollectionSection() {
+export default function CollectionSection() {
   const [votes, setVotes] = useState<Record<string, number>>({
     'mg-iran': 312,
     'mg-cambodia': 245,
@@ -30,23 +30,26 @@ export default function MGCollectionSection() {
           <div>
             <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Collection</p>
             <h2 className="text-2xl font-bold tracking-tight text-white" style={{ fontFamily: 'Times New Roman, Georgia, serif' }}>
-              MAKE GREAT
+              COLLECTION
             </h2>
           </div>
-          <Link to="/mg-collection" className="text-[10px] tracking-[0.2em] uppercase text-white/40 hover:text-white transition-colors underline underline-offset-4 decoration-white/10 hover:decoration-white/40">
+          <Link to="/collection" className="text-[10px] tracking-[0.2em] uppercase text-white/40 hover:text-white transition-colors underline underline-offset-4 decoration-white/10 hover:decoration-white/40">
             View All
           </Link>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-white/10">
-          {COUNTRY_MG_HATS.map((hat) => (
+          {COUNTRY_HATS.map((hat) => (
             <div key={hat.id} className="bg-black">
               <div className="h-72">
                 <HatScene
                   hatColor={hat.hatColor}
+                  bandColor={hat.bandColor}
                   text={hat.text}
                   backText={hat.backText}
                   textColor={hat.textColor}
+                  font={hat.font}
+                  flagCode={hat.flagCode}
                   autoRotate
                   className="w-full h-full"
                 />

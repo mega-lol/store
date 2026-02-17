@@ -3,10 +3,10 @@ export type DecalType = 'image' | 'text';
 export interface Decal {
   id: string;
   type: DecalType;
-  url?: string; // For image decals
-  text?: string; // For text decals
-  color?: string; // For text decals
-  font?: string; // For text decals
+  url?: string;
+  text?: string;
+  color?: string;
+  font?: string;
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
@@ -15,7 +15,8 @@ export interface Decal {
 export interface HatConfig {
   id: string;
   hatColor: string;
-  texture?: string; // URL for the base hat texture
+  bandColor?: string;
+  texture?: string;
   text: string;
   backText?: string;
   font: string;
@@ -23,6 +24,7 @@ export interface HatConfig {
   size: 'S' | 'M' | 'L' | 'XL';
   countryCode?: string;
   countryName?: string;
+  flagCode?: string;
   decals: Decal[];
 }
 
@@ -37,10 +39,13 @@ export interface CartItem {
 }
 
 export const FONTS = [
+  { name: 'Vinegar', value: 'Vinegar' },
   { name: 'Times New Roman', value: 'Times New Roman' },
   { name: 'Classic Block', value: 'Bebas Neue' },
   { name: 'Clean Sans', value: 'Inter' },
   { name: 'Bold Serif', value: 'Georgia' },
+  { name: 'Oswald', value: 'Oswald' },
+  { name: 'Merriweather', value: 'Merriweather' },
 ] as const;
 
 export const PRESET_HAT_COLORS = [
@@ -56,62 +61,72 @@ export const PRESET_TEXT_COLORS = [
 export const DEFAULT_HAT: HatConfig = {
   id: '',
   hatColor: '#FFFFFF',
+  bandColor: '#FFFFFF',
   text: 'MAKE EARTH\nGREAT AGAIN',
   backText: '',
-  font: 'Times New Roman',
+  font: 'Vinegar',
   textColor: '#000000',
   size: 'M',
+  flagCode: 'US',
   decals: [],
 };
 
-export const COUNTRY_MG_HATS: CountryHat[] = [
+export const COUNTRY_HATS: CountryHat[] = [
   {
-    id: 'mega-earth',
-    hatColor: '#CC0000',
-    text: 'MAKE EARTH\nGREAT AGAIN',
-    backText: 'MEGA',
-    font: 'Times New Roman',
-    textColor: '#FFFFFF',
+    id: 'india',
+    hatColor: '#FFFFFF',
+    bandColor: '#FFFFFF',
+    text: 'MAKE INDIA\nGREAT AGAIN',
+    backText: 'INDIA',
+    font: 'Vinegar',
+    textColor: '#000000',
     size: 'M',
-    countryCode: 'EARTH',
-    countryName: 'Earth',
-    decals: []
+    countryCode: 'IN',
+    countryName: 'India',
+    flagCode: 'IN',
+    decals: [],
   },
   {
-    id: 'mg-iran',
-    hatColor: '#000000',
+    id: 'iran',
+    hatColor: '#FFFFFF',
+    bandColor: '#FFFFFF',
     text: 'MAKE IRAN\nGREAT AGAIN',
-    backText: '',
-    font: 'Times New Roman',
-    textColor: '#FFFFFF',
+    backText: 'IRAN',
+    font: 'Vinegar',
+    textColor: '#000000',
     size: 'M',
     countryCode: 'IR',
     countryName: 'Iran',
-    decals: []
+    flagCode: 'IR',
+    decals: [],
   },
   {
-    id: 'mg-cambodia',
-    hatColor: '#000000',
+    id: 'cambodia',
+    hatColor: '#FFFFFF',
+    bandColor: '#FFFFFF',
     text: 'MAKE CAMBODIA\nGREAT AGAIN',
-    backText: '',
-    font: 'Times New Roman',
-    textColor: '#FFFFFF',
+    backText: 'CAMBODIA',
+    font: 'Vinegar',
+    textColor: '#000000',
     size: 'M',
     countryCode: 'KH',
     countryName: 'Cambodia',
-    decals: []
+    flagCode: 'KH',
+    decals: [],
   },
   {
-    id: 'mg-ukraine',
-    hatColor: '#1a1a6e',
+    id: 'ukraine',
+    hatColor: '#FFFFFF',
+    bandColor: '#FFFFFF',
     text: 'MAKE UKRAINE\nGREAT AGAIN',
-    backText: '',
-    font: 'Times New Roman',
-    textColor: '#FFD700',
+    backText: 'UKRAINE',
+    font: 'Vinegar',
+    textColor: '#000000',
     size: 'M',
     countryCode: 'UA',
     countryName: 'Ukraine',
-    decals: []
+    flagCode: 'UA',
+    decals: [],
   },
 ];
 

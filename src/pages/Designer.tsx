@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import HatScene from '@/components/HatScene';
 import CustomizationPanel from '@/components/CustomizationPanel';
 import { DEFAULT_HAT, HatConfig, Decal } from '@/types/hat';
+import { applySiteFont, ensureFontLoaded } from '@/lib/fonts';
 
 export default function Designer() {
   const [config, setConfig] = useState<HatConfig>({ ...DEFAULT_HAT });
   const [selectedDecalId, setSelectedDecalId] = useState<string | null>(null);
+
+  useEffect(() => {
+    applySiteFont(config.font);
+    void ensureFontLoaded(config.font);
+  }, [config.font]);
 
   const handleDecalUpdate = (id: string, updates: Partial<Decal>) => {
     setConfig(prev => ({
@@ -29,10 +35,13 @@ export default function Designer() {
         <div className="flex-1 relative">
           <HatScene
             hatColor={config.hatColor}
+            bandColor={config.bandColor}
             texture={config.texture}
             text={config.text}
             backText={config.backText}
             textColor={config.textColor}
+            font={config.font}
+            flagCode={config.flagCode}
             decals={config.decals}
             onDecalUpdate={handleDecalUpdate}
             selectedDecalId={selectedDecalId || undefined}

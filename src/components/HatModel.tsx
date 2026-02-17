@@ -1,16 +1,20 @@
 import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree, useLoader } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
+import { useGLTF, Decal as ProjectedDecal } from '@react-three/drei';
 import * as THREE from 'three';
 import { Decal as HatDecal } from '@/types/hat';
+import { toFontStack } from '@/lib/fonts';
 import DecalLayer from './DecalLayer';
 
 interface HatModelProps {
   hatColor: string;
+  bandColor?: string;
   texture?: string;
   text: string;
   backText?: string;
   textColor: string;
+  fontFamily?: string;
+  flagCode?: string;
   decals?: HatDecal[];
   onDecalUpdate?: (id: string, updates: Partial<HatDecal>) => void;
   selectedDecalId?: string;
@@ -19,11 +23,14 @@ interface HatModelProps {
 }
 
 const MODEL_PATH = `${import.meta.env.BASE_URL}models/baseball_cap.glb`;
+const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+const FABRIC_MATERIALS = new Set(['baseballCap']);
 
 function makeTextTexture(
   lines: string[],
   textColor: string,
   renderer: THREE.WebGLRenderer,
+  fontFamily?: string,
 ): THREE.CanvasTexture {
   const c = document.createElement('canvas');
   c.width = 2048;
@@ -52,7 +59,9 @@ function makeTextTexture(
           ? 140
           : 180;
 
-  const fontStr = `900 ${fontSize}px "Bodoni Moda", "Times New Roman", serif`;
+  const fontStack = toFontStack(fontFamily);
+
+  const fontStr = `900 ${fontSize}px ${fontStack}`;
   ctx.font = fontStr;
 
   const widest = lines.reduce((a, b) => (a.length > b.length ? a : b));
@@ -61,7 +70,7 @@ function makeTextTexture(
     fontSize = Math.floor((fontSize * (c.width * 0.85)) / measured);
   }
 
-  const finalFont = `900 ${fontSize}px "Bodoni Moda", "Times New Roman", serif`;
+  const finalFont = `900 ${fontSize}px ${fontStack}`;
   const dy = fontSize * 1.15;
   const y0 = c.height * 0.5 - ((lineCount - 1) * dy) / 2;
 
@@ -82,42 +91,15 @@ function makeTextTexture(
   return tex;
 }
 
-function createCurvedPlane(
-  width: number,
-  height: number,
-  radius: number,
-  segsX = 48,
-  segsY = 16,
-): THREE.BufferGeometry {
-  const geo = new THREE.PlaneGeometry(width, height, segsX, segsY);
-  const pos = geo.attributes.position;
-
-  for (let i = 0; i < pos.count; i++) {
-    const px = pos.getX(i);
-    const py = pos.getY(i);
-    const angle = px / radius;
-
-    const newX = Math.sin(angle) * radius;
-    const newZ = Math.cos(angle) * radius - radius;
-
-    const ny = py / (height * 0.5);
-    const dome = 0.12 * radius * (1 - ny * ny * 0.3);
-
-    pos.setXYZ(i, newX, py, newZ + dome);
-  }
-
-  geo.computeVertexNormals();
-  return geo;
-}
-
-const FABRIC_MATERIALS = new Set(['baseballCap']);
-
 export default function HatModel({
   hatColor,
+  bandColor,
   texture,
   text,
   backText,
   textColor,
+  fontFamily,
+  flagCode,
   decals = [],
   onDecalUpdate,
   selectedDecalId,
@@ -125,6 +107,7 @@ export default function HatModel({
   autoRotate = false,
 }: HatModelProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const mainCapMeshRef = useRef<THREE.Mesh>(null!);
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF(MODEL_PATH);
 
@@ -132,7 +115,18 @@ export default function HatModel({
   if (hatTexture) {
     hatTexture.wrapS = hatTexture.wrapT = THREE.RepeatWrapping;
     hatTexture.repeat.set(2, 2);
+    hatTexture.colorSpace = THREE.SRGBColorSpace;
   }
+
+  const flagTextureUrl = flagCode ? `https://flagcdn.com/w80/${flagCode.toLowerCase()}.png` : TRANSPARENT_PIXEL;
+  const flagTexture = useLoader(THREE.TextureLoader, flagTextureUrl);
+
+  useEffect(() => {
+    flagTexture.colorSpace = THREE.SRGBColorSpace;
+    flagTexture.wrapS = THREE.ClampToEdgeWrapping;
+    flagTexture.wrapT = THREE.ClampToEdgeWrapping;
+    flagTexture.needsUpdate = true;
+  }, [flagTexture]);
 
   useFrame((_, delta) => {
     if (autoRotate && groupRef.current) {
@@ -141,6 +135,26 @@ export default function HatModel({
   });
 
   const capMesh = useMemo(() => gltfScene.clone(true), [gltfScene]);
+  const mainCapMesh = useMemo(() => {
+    let target: THREE.Mesh | null = null;
+    let fallback: THREE.Mesh | null = null;
+
+    capMesh.traverse((child) => {
+      if (!(child as THREE.Mesh).isMesh) return;
+      const mesh = child as THREE.Mesh;
+      if (!fallback) fallback = mesh;
+
+      if (!target && mesh.parent?.name === 'mainCap') {
+        target = mesh;
+      }
+    });
+
+    return target || fallback;
+  }, [capMesh]);
+
+  if (mainCapMesh) {
+    mainCapMeshRef.current = mainCapMesh;
+  }
 
   const { center, size, mcCenter, mcSize, mcFrontZ, mcBackZ } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(capMesh);
@@ -173,24 +187,14 @@ export default function HatModel({
   const frontTexture = useMemo(() => {
     const lines = (text || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
-    return makeTextTexture(lines, textColor, gl);
-  }, [text, textColor, gl]);
+    return makeTextTexture(lines, textColor, gl, fontFamily);
+  }, [text, textColor, gl, fontFamily]);
 
   const backTexture = useMemo(() => {
     const lines = (backText || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
-    return makeTextTexture(lines, textColor, gl);
-  }, [backText, textColor, gl]);
-
-  const frontW = mcSize.x * 0.62;
-  const frontH = mcSize.y * 0.34;
-  const frontR = mcSize.x * 0.48;
-  const frontGeo = useMemo(() => createCurvedPlane(frontW, frontH, frontR), [frontW, frontH, frontR]);
-
-  const backW = mcSize.x * 0.48;
-  const backH = mcSize.y * 0.26;
-  const backR = mcSize.x * 0.4;
-  const backGeo = useMemo(() => createCurvedPlane(backW, backH, backR), [backW, backH, backR]);
+    return makeTextTexture(lines, textColor, gl, fontFamily);
+  }, [backText, textColor, gl, fontFamily]);
 
   useEffect(() => {
     capMesh.traverse((child) => {
@@ -203,14 +207,18 @@ export default function HatModel({
         const isFabric = FABRIC_MATERIALS.has(materialName);
 
         if (isFabric) {
-          const mat = new THREE.MeshStandardMaterial();
+          const mat = original.clone();
           mat.name = materialName;
-          mat.color.set(hatColor);
-          if (hatTexture) {
+
+          const isBand = mesh.parent?.name === 'innerLiner';
+          mat.color.set(isBand ? (bandColor || hatColor) : hatColor);
+
+          if (hatTexture && !isBand) {
             mat.map = hatTexture;
             mat.color.set('#ffffff');
           }
-          mat.roughness = 0.75;
+
+          mat.roughness = 0.78;
           mat.metalness = 0.05;
           mat.transparent = false;
           mat.opacity = 1;
@@ -234,23 +242,20 @@ export default function HatModel({
         mesh.material = remat(mesh.material);
       }
     });
-  }, [capMesh, hatColor, hatTexture]);
+  }, [capMesh, hatColor, bandColor, hatTexture]);
 
   const textY = mcCenter.y + mcSize.y * 0.12;
-  const frontZ = mcFrontZ + mcSize.z * 0.002;
-  const backZ = mcBackZ - mcSize.z * 0.002;
+  const frontTextPos: [number, number, number] = [mcCenter.x, textY, mcFrontZ + mcSize.z * 0.008];
+  const backTextPos: [number, number, number] = [mcCenter.x, textY - mcSize.y * 0.03, mcBackZ - mcSize.z * 0.008];
+  const rightFlagPos: [number, number, number] = [
+    mcCenter.x + mcSize.x * 0.29,
+    mcCenter.y + mcSize.y * 0.03,
+    mcCenter.z + mcSize.z * 0.04,
+  ];
 
-  const textMaterialProps = {
-    transparent: true,
-    alphaTest: 0.1,
-    roughness: 0.65,
-    metalness: 0.05,
-    depthWrite: false,
-    side: THREE.FrontSide as THREE.Side,
-    polygonOffset: true,
-    polygonOffsetFactor: -8,
-    polygonOffsetUnits: -8,
-  };
+  const frontTextScale: [number, number, number] = [mcSize.x * 0.62, mcSize.y * 0.34, Math.max(mcSize.z * 0.42, 0.08)];
+  const backTextScale: [number, number, number] = [mcSize.x * 0.48, mcSize.y * 0.26, Math.max(mcSize.z * 0.34, 0.07)];
+  const flagScale: [number, number, number] = [mcSize.x * 0.22, mcSize.y * 0.14, Math.max(mcSize.z * 0.25, 0.06)];
 
   return (
     <group ref={groupRef} scale={displayScale}>
@@ -269,20 +274,60 @@ export default function HatModel({
           />
         ))}
 
-        {frontTexture && (
-          <mesh geometry={frontGeo} position={[mcCenter.x, textY, frontZ]} rotation={[-0.08, 0, 0]}>
-            <meshStandardMaterial map={frontTexture} {...textMaterialProps} />
-          </mesh>
+        {mainCapMesh && frontTexture && (
+          <ProjectedDecal mesh={mainCapMeshRef} position={frontTextPos} rotation={[-0.08, 0, 0]} scale={frontTextScale}>
+            <meshStandardMaterial
+              map={frontTexture}
+              transparent
+              alphaTest={0.08}
+              depthTest
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-2}
+              polygonOffsetUnits={-2}
+              roughness={0.65}
+              metalness={0.05}
+            />
+          </ProjectedDecal>
         )}
 
-        {backTexture && (
-          <mesh
-            geometry={backGeo}
-            position={[mcCenter.x, textY - mcSize.y * 0.03, backZ]}
+        {mainCapMesh && backTexture && (
+          <ProjectedDecal
+            mesh={mainCapMeshRef}
+            position={backTextPos}
             rotation={[0.08, Math.PI, 0]}
+            scale={backTextScale}
           >
-            <meshStandardMaterial map={backTexture} {...textMaterialProps} />
-          </mesh>
+            <meshStandardMaterial
+              map={backTexture}
+              transparent
+              alphaTest={0.08}
+              depthTest
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-2}
+              polygonOffsetUnits={-2}
+              roughness={0.65}
+              metalness={0.05}
+            />
+          </ProjectedDecal>
+        )}
+
+        {mainCapMesh && flagCode && (
+          <ProjectedDecal mesh={mainCapMeshRef} position={rightFlagPos} rotation={[0, Math.PI * 0.5, 0]} scale={flagScale}>
+            <meshStandardMaterial
+              map={flagTexture}
+              transparent
+              alphaTest={0.03}
+              depthTest
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-2}
+              polygonOffsetUnits={-2}
+              roughness={0.7}
+              metalness={0.03}
+            />
+          </ProjectedDecal>
         )}
       </group>
     </group>

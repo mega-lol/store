@@ -13,7 +13,28 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null);
 
-const PRICE_PER_HAT = 50.00;
+const STANDARD_HAT_PRICE = 50.0;
+const SPECIAL_EDITION_PRICE = 80.0;
+
+function normalizeColor(color?: string): string {
+  return (color || '').trim().toLowerCase();
+}
+
+function isWhite(color?: string): boolean {
+  const c = normalizeColor(color);
+  return c === '#fff' || c === '#ffffff' || c === 'white' || c === 'rgb(255,255,255)';
+}
+
+function isBlack(color?: string): boolean {
+  const c = normalizeColor(color);
+  return c === '#000' || c === '#000000' || c === 'black' || c === 'rgb(0,0,0)';
+}
+
+function getHatPrice(hat: HatConfig): number {
+  const whiteOnWhite = isWhite(hat.hatColor) && isWhite(hat.textColor);
+  const blackOnBlack = isBlack(hat.hatColor) && isBlack(hat.textColor);
+  return whiteOnWhite || blackOnBlack ? SPECIAL_EDITION_PRICE : STANDARD_HAT_PRICE;
+}
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
@@ -35,7 +56,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = () => setItems([]);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const totalPrice = items.reduce((sum, i) => sum + i.quantity * PRICE_PER_HAT, 0);
+  const totalPrice = items.reduce((sum, i) => sum + i.quantity * getHatPrice(i.hat), 0);
 
   return (
     <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, totalItems, totalPrice }}>
@@ -50,4 +71,4 @@ export function useCart() {
   return ctx;
 }
 
-export { PRICE_PER_HAT };
+export { STANDARD_HAT_PRICE, SPECIAL_EDITION_PRICE, getHatPrice };

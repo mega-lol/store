@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import HatScene from '@/components/HatScene';
 import { DEFAULT_HAT } from '@/types/hat';
-import { useCart, PRICE_PER_HAT } from '@/store/cartStore';
+import { useCart, getHatPrice } from '@/store/cartStore';
 import { useToast } from '@/hooks/use-toast';
 
 const config = DEFAULT_HAT;
+const defaultPrice = getHatPrice(config);
 
 export default function Index() {
   const { addItem } = useCart();
@@ -25,9 +26,12 @@ export default function Index() {
       <div className="absolute inset-0 animate-scale-in" style={{ opacity: 0 }}>
         <HatScene
           hatColor={config.hatColor}
+          bandColor={config.bandColor}
           text={config.text}
           backText={config.backText}
           textColor={config.textColor}
+          font={config.font}
+          flagCode={config.flagCode}
           autoRotate
           className="w-full h-full"
         />
@@ -49,7 +53,7 @@ export default function Index() {
             onClick={handleBuy}
             className="h-10 px-8 bg-black text-white text-xs tracking-[0.2em] uppercase font-bold hover:bg-black/80 transition-colors"
           >
-            Buy ${PRICE_PER_HAT}
+            Buy ${defaultPrice}
           </button>
           <Link
             to="/designer"

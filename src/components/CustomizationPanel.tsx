@@ -1,11 +1,13 @@
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import ColorPicker from './ColorPicker';
-import { HatConfig, PRESET_HAT_COLORS, PRESET_TEXT_COLORS, Decal } from '@/types/hat';
-import { useCart, PRICE_PER_HAT } from '@/store/cartStore';
+import { HatConfig, PRESET_HAT_COLORS, PRESET_TEXT_COLORS, Decal, COUNTRY_CODES, FONTS } from '@/types/hat';
+import { useCart } from '@/store/cartStore';
 import { ShoppingCart, Share2, Plus, Trash2, Upload, Image as ImageIcon, Type, RotateCw, Move } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { applySiteFont, ensureFontLoaded } from '@/lib/fonts';
 import { v4 as uuidv4 } from 'uuid';
 
 interface CustomizationPanelProps {
@@ -16,12 +18,40 @@ interface CustomizationPanelProps {
 }
 
 const SIZES = ['S', 'M', 'L', 'XL'] as const;
+const FLAG_NONE = 'NONE';
 
 export default function CustomizationPanel({ config, onChange, selectedDecalId, onSelectDecal }: CustomizationPanelProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
+  const [googleFontName, setGoogleFontName] = useState('');
 
   const update = (partial: Partial<HatConfig>) => onChange({ ...config, ...partial });
+
+  useEffect(() => {
+    applySiteFont(config.font);
+    void ensureFontLoaded(config.font);
+  }, [config.font]);
+
+  const setEdition = (hatColor: string, textColor: string) => {
+    update({ hatColor, bandColor: hatColor, textColor });
+  };
+
+  const handleFontSelect = async (font: string) => {
+    await ensureFontLoaded(font);
+    update({ font });
+  };
+
+  const handleGoogleFontApply = async () => {
+    const trimmed = googleFontName.trim();
+    if (!trimmed) return;
+    await ensureFontLoaded(trimmed);
+    update({ font: trimmed });
+    toast({ title: 'Font Applied', description: `${trimmed} is now your active font.` });
+  };
+
+  const handleFlagChange = (value: string) => {
+    update({ flagCode: value === FLAG_NONE ? undefined : value });
+  };
 
   const handleAddToCart = () => {
     addItem(config);
@@ -64,6 +94,7 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
       scale: [0.15, 0.15, 0.15],
       text: type === 'text' ? 'New Text' : undefined,
       color: type === 'text' ? '#ffffff' : undefined,
+      font: type === 'text' ? config.font : undefined,
     };
 
     // For images, we need to trigger upload immediately or just add placeholder
@@ -122,6 +153,43 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
               presets={PRESET_HAT_COLORS}
             />
 
+            <ColorPicker
+              label="Band Color"
+              value={config.bandColor || config.hatColor}
+              onChange={bandColor => update({ bandColor })}
+              presets={PRESET_HAT_COLORS}
+            />
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Quick Editions</label>
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  onClick={() => setEdition('#FFFFFF', '#000000')}
+                  className="h-8 text-[10px] border border-white/20 text-white/80 hover:border-white/50"
+                >
+                  White Hat
+                </button>
+                <button
+                  onClick={() => setEdition('#000000', '#FFFFFF')}
+                  className="h-8 text-[10px] border border-white/20 text-white/80 hover:border-white/50"
+                >
+                  Black Hat
+                </button>
+                <button
+                  onClick={() => setEdition('#FFFFFF', '#FFFFFF')}
+                  className="h-8 text-[10px] border border-white/20 text-white/80 hover:border-white/50"
+                >
+                  Whiteout ($80)
+                </button>
+                <button
+                  onClick={() => setEdition('#000000', '#000000')}
+                  className="h-8 text-[10px] border border-white/20 text-white/80 hover:border-white/50"
+                >
+                  Blackout ($80)
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium text-white">Pattern / Texture</label>
               <div className="flex gap-2">
@@ -179,6 +247,52 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
               onChange={textColor => update({ textColor })}
               presets={PRESET_TEXT_COLORS}
             />
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Font</label>
+              <select
+                value={config.font}
+                onChange={e => void handleFontSelect(e.target.value)}
+                className="w-full h-8 text-xs bg-transparent border border-white/10 text-white px-2 focus:outline-none focus:border-white/30"
+              >
+                {FONTS.map((font) => (
+                  <option key={font.value} value={font.value} className="bg-black text-white">
+                    {font.name}
+                  </option>
+                ))}
+              </select>
+              <div className="flex gap-2">
+                <input
+                  value={googleFontName}
+                  onChange={e => setGoogleFontName(e.target.value)}
+                  placeholder="Google font name (e.g. Oswald)"
+                  className="flex-1 h-8 text-xs bg-transparent border border-white/10 text-white placeholder:text-white/20 px-2 focus:outline-none focus:border-white/30"
+                />
+                <Button
+                  variant="outline"
+                  className="h-8 px-2 text-[10px] border-white/20 text-white/70"
+                  onClick={() => void handleGoogleFontApply()}
+                >
+                  Load
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Right-Side Flag</label>
+              <select
+                value={config.flagCode || FLAG_NONE}
+                onChange={e => handleFlagChange(e.target.value)}
+                className="w-full h-8 text-xs bg-transparent border border-white/10 text-white px-2 focus:outline-none focus:border-white/30"
+              >
+                <option value={FLAG_NONE} className="bg-black text-white">None</option>
+                {COUNTRY_CODES.map((country) => (
+                  <option key={country.code} value={country.code} className="bg-black text-white">
+                    {country.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="space-y-1.5">
               <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Front Text</label>
@@ -313,17 +427,21 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
 
       <div className="pt-4 border-t border-white/5 space-y-2 p-5 bg-black">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-white/30">Price</span>
-          <span className="text-xl font-bold text-white">${PRICE_PER_HAT}</span>
+          <span className="text-[10px] tracking-[0.2em] uppercase text-white/30">Pre-order</span>
+          <span className="text-xl font-bold text-white">$50</span>
         </div>
         <Button onClick={handleAddToCart} className="w-full h-10 text-xs font-bold tracking-[0.15em] uppercase bg-white text-black hover:bg-white/90" size="lg">
           <ShoppingCart className="mr-2 h-3.5 w-3.5" />
-          Add to Cart
+          Pre-order Now
         </Button>
         <button onClick={handleShare} className="w-full h-8 text-[10px] tracking-[0.2em] uppercase text-white/30 hover:text-white border border-white/5 hover:border-white/20 transition-colors flex items-center justify-center gap-2">
           <Share2 className="h-3 w-3" />
           Share Design
         </button>
+        <div className="mt-3 border border-white/10 p-3 text-[10px] text-white/40 leading-relaxed">
+          <span className="block text-white/70 uppercase tracking-[0.15em] mb-1">FAQ</span>
+          New designs require at least 1,000 pre-orders before release.
+        </div>
       </div>
     </div>
   );

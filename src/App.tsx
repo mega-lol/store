@@ -9,7 +9,7 @@ import Index from "./pages/Index";
 import Designer from "./pages/Designer";
 import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
-import MGCollection from "./pages/MGCollection";
+import Collection from "./pages/MGCollection";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +27,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/designer" element={<Designer />} />
-            <Route path="/mg-collection" element={<MGCollection />} />
+            <Route path="/collection" element={<Collection />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

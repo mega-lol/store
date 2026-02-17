@@ -20,7 +20,7 @@ export default function Navbar() {
           MEGA
         </Link>
         <div className="flex items-center gap-4">
-          <Link to="/mg-collection" className={`text-[10px] tracking-[0.2em] uppercase transition-colors ${
+          <Link to="/collection" className={`text-[10px] tracking-[0.2em] uppercase transition-colors ${
             isHome ? 'text-black/40 hover:text-black' : 'text-white/40 hover:text-white'
           }`}>
             Collection
