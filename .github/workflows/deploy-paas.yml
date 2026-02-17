@@ -1,0 +1,204 @@
+name: Deploy to Hanzo PaaS
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "PaaS environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+      container_iid:
+        description: "PaaS container iid"
+        required: true
+        default: "mega-store"
+        type: string
+      image_tag:
+        description: "Optional image tag override"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mega-store
+  PAAS_API: ${{ vars.PAAS_API_URL }}
+  ORG_SLUG: adxyz
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Resolve image tag
+        id: tag
+        run: |
+          if [[ -n "${{ github.event.inputs.image_tag }}" ]]; then
+            echo "value=${{ github.event.inputs.image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push app image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+          build-args: |
+            VITE_BASE_PATH=/mega/
+            VITE_HANZO_COMMERCE_URL=${{ vars.HANZO_COMMERCE_URL }}
+            VITE_ADXYZ_HOME_URL=${{ vars.ADXYZ_HOME_URL }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Authenticate with Hanzo PaaS
+        id: auth
+        run: |
+          API_ROOT="${{ env.PAAS_API }}"
+          if [[ -z "$API_ROOT" ]]; then
+            API_ROOT="https://platform.hanzo.ai"
+          fi
+          RESPONSE=$(curl -sf -X POST "${API_ROOT}/v1/auth/login" \
+            -H "Content-Type: application/json" \
+            -d "{\"email\":\"${{ secrets.PAAS_EMAIL }}\",\"password\":\"${{ secrets.PAAS_PASSWORD }}\"}")
+          AT=$(echo "$RESPONSE" | jq -r '.at')
+          if [[ -z "$AT" || "$AT" == "null" ]]; then
+            echo "::error::Failed to authenticate with Hanzo PaaS"
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+          echo "::add-mask::$AT"
+          echo "token=$AT" >> "$GITHUB_OUTPUT"
+
+      - name: Discover PaaS IDs
+        id: discover
+        run: |
+          API_ROOT="${{ env.PAAS_API }}"
+          if [[ -z "$API_ROOT" ]]; then
+            API_ROOT="https://platform.hanzo.ai"
+          fi
+          TOKEN="${{ steps.auth.outputs.token }}"
+          API="${API_ROOT}/v1"
+          TARGET_ENV="${{ github.event.inputs.environment }}"
+
+          ORG_ID=$(curl -sf "$API/org" -H "Authorization: $TOKEN" | jq -r ".[] | select(.iid == \"${{ env.ORG_SLUG }}\") | ._id")
+          if [[ -z "$ORG_ID" || "$ORG_ID" == "null" ]]; then
+            echo "::error::Org '${{ env.ORG_SLUG }}' not found"
+            exit 1
+          fi
+          echo "org_id=$ORG_ID" >> "$GITHUB_OUTPUT"
+
+          PROJECT_ID=$(curl -sf "$API/org/$ORG_ID/project" -H "Authorization: $TOKEN" | jq -r '.[0]._id')
+          if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "null" ]]; then
+            echo "::error::No project found in org '${{ env.ORG_SLUG }}'"
+            exit 1
+          fi
+          echo "project_id=$PROJECT_ID" >> "$GITHUB_OUTPUT"
+
+          ENV_ID=$(curl -sf "$API/org/$ORG_ID/project/$PROJECT_ID/env" -H "Authorization: $TOKEN" | jq -r ".[] | select(.iid == \"$TARGET_ENV\" or .name == \"$TARGET_ENV\") | ._id" | head -1)
+          if [[ -z "$ENV_ID" || "$ENV_ID" == "null" ]]; then
+            echo "::error::Environment '$TARGET_ENV' not found"
+            exit 1
+          fi
+          echo "env_id=$ENV_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Upsert PaaS container image
+        env:
+          CONTAINER_IID: ${{ github.event.inputs.container_iid }}
+          IMAGE: ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
+        run: |
+          API_ROOT="${{ env.PAAS_API }}"
+          if [[ -z "$API_ROOT" ]]; then
+            API_ROOT="https://platform.hanzo.ai"
+          fi
+          TOKEN="${{ steps.auth.outputs.token }}"
+          API="${API_ROOT}/v1/org/${{ steps.discover.outputs.org_id }}/project/${{ steps.discover.outputs.project_id }}/env/${{ steps.discover.outputs.env_id }}"
+
+          CONTAINERS=$(curl -sf "$API/container" -H "Authorization: $TOKEN")
+          CONTAINER_ID=$(echo "$CONTAINERS" | jq -r ".[] | select(.iid == \"$CONTAINER_IID\" or .name == \"$CONTAINER_IID\") | ._id" | head -1)
+
+          if [[ -z "$CONTAINER_ID" || "$CONTAINER_ID" == "null" ]]; then
+            echo "Container '$CONTAINER_IID' does not exist; creating it."
+            curl -sf -X POST "$API/container" \
+              -H "Authorization: $TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"name\": \"$CONTAINER_IID\",
+                \"iid\": \"$CONTAINER_IID\",
+                \"type\": \"deployment\",
+                \"repoOrRegistry\": \"registry\",
+                \"registry\": {
+                  \"imageName\": \"mega-store\",
+                  \"imageTag\": \"${{ steps.tag.outputs.value }}\",
+                  \"imageUrl\": \"$IMAGE\"
+                },
+                \"networking\": {
+                  \"containerPort\": 80,
+                  \"ingress\": { \"enabled\": true, \"type\": \"subdomain\" }
+                },
+                \"podConfig\": {
+                  \"cpuRequest\": 100,
+                  \"cpuRequestType\": \"millicores\",
+                  \"memoryRequest\": 128,
+                  \"memoryRequestType\": \"mebibyte\",
+                  \"cpuLimit\": 500,
+                  \"cpuLimitType\": \"millicores\",
+                  \"memoryLimit\": 512,
+                  \"memoryLimitType\": \"mebibyte\"
+                },
+                \"deploymentConfig\": { \"desiredReplicas\": 2 }
+              }" >/dev/null
+
+            CONTAINER_ID=$(curl -sf "$API/container" -H "Authorization: $TOKEN" | jq -r ".[] | select(.iid == \"$CONTAINER_IID\" or .name == \"$CONTAINER_IID\") | ._id" | head -1)
+          fi
+
+          if [[ -z "$CONTAINER_ID" || "$CONTAINER_ID" == "null" ]]; then
+            echo "::error::Container '$CONTAINER_IID' could not be created or found"
+            exit 1
+          fi
+
+          curl -sf -X PUT "$API/container/$CONTAINER_ID" \
+            -H "Authorization: $TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"registry\": {
+                \"imageName\": \"mega-store\",
+                \"imageTag\": \"${{ steps.tag.outputs.value }}\",
+                \"imageUrl\": \"$IMAGE\"
+              }
+            }" | jq '{name: .iid, status: .status.current, image: .registry.imageUrl}'

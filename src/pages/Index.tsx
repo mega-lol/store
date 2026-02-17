@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const config = DEFAULT_HAT;
 const defaultPrice = getHatPrice(config);
+const adxyzHomeUrl = import.meta.env.VITE_ADXYZ_HOME_URL || 'https://ad.xyz';
 
 export default function Index() {
   const { addItem } = useCart();
@@ -70,6 +71,16 @@ export default function Index() {
           Drag to rotate
         </p>
       </div>
+
+      {/* Tiny ADXYZ link */}
+      <a
+        href={adxyzHomeUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute bottom-2 left-6 z-10 text-[9px] tracking-[0.24em] uppercase text-black/35 hover:text-black/70 transition-colors"
+      >
+        ad.xyz
+      </a>
     </main>
   );
 }

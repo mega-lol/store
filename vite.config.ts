@@ -4,7 +4,11 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: mode === "production" ? "/megahats/" : "/",
+  base: (() => {
+    const configured = process.env.VITE_BASE_PATH;
+    if (configured) return configured.endsWith("/") ? configured : `${configured}/`;
+    return mode === "production" ? "/megahats/" : "/";
+  })(),
   server: {
     host: "::",
     port: 8080,

@@ -1,0 +1,73 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mega-store
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - ad.xyz
+      secretName: ad-xyz-tls
+  rules:
+    - host: ad.xyz
+      http:
+        paths:
+          - path: /mega(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: mega-store
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: adxyz-docs
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - ad.xyz
+      secretName: ad-xyz-tls
+  rules:
+    - host: ad.xyz
+      http:
+        paths:
+          - path: /docs(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: adxyz-docs
+                port:
+                  number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: adxyz-root-redirect
+  annotations:
+    nginx.ingress.kubernetes.io/permanent-redirect: https://ad.xyz/mega
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - ad.xyz
+      secretName: ad-xyz-tls
+  rules:
+    - host: ad.xyz
+      http:
+        paths:
+          - path: /
+            pathType: Exact
+            backend:
+              service:
+                name: mega-store
+                port:
+                  number: 80
