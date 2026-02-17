@@ -168,22 +168,46 @@ function buildCountryCodes(): Array<{ code: string; name: string }> {
     supportedValuesOf?: (type: string) => string[];
   }).supportedValuesOf;
 
-  if (!supportedValuesOf) return COUNTRY_CODE_FALLBACK;
+  try {
+    const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
+    const codeSet = new Set<string>();
+    const extras = ['XK', 'TW', 'PS', 'VA'];
 
-  const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
-  const extras = ['XK', 'TW', 'PS', 'VA'];
-  const codeSet = new Set<string>();
-
-  for (const code of supportedValuesOf('region')) {
-    if (/^[A-Z]{2}$/.test(code) && code !== 'EU') {
-      codeSet.add(code);
+    // 'region' is not supported in some runtimes; wrap it safely.
+    if (supportedValuesOf) {
+      try {
+        for (const code of supportedValuesOf('region')) {
+          if (/^[A-Z]{2}$/.test(code) && code !== 'EU') {
+            codeSet.add(code);
+          }
+        }
+      } catch {
+        // Fallback below.
+      }
     }
-  }
-  for (const code of extras) codeSet.add(code);
 
-  return Array.from(codeSet)
-    .map((code) => ({ code, name: displayNames.of(code) || code }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    // Brute-force 2-letter region codes to cover full flag list where available.
+    if (codeSet.size === 0) {
+      for (let a = 65; a <= 90; a += 1) {
+        for (let b = 65; b <= 90; b += 1) {
+          const code = String.fromCharCode(a, b);
+          const name = displayNames.of(code);
+          if (!name || name === code) continue;
+          if (/^Unknown Region/i.test(name)) continue;
+          if (code === 'EU') continue;
+          codeSet.add(code);
+        }
+      }
+    }
+
+    for (const code of extras) codeSet.add(code);
+
+    return Array.from(codeSet)
+      .map((code) => ({ code, name: displayNames.of(code) || code }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return COUNTRY_CODE_FALLBACK;
+  }
 }
 
 export const COUNTRY_CODES = buildCountryCodes();
