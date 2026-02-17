@@ -93,7 +93,7 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
   }, [decal.normal, spin]);
 
   const size = Math.max(0.03, decal.scale?.[0] ?? 0.15);
-  const projectionDepth = Math.max(0.06, size * 1.3);
+  const projectionDepth = Math.max(0.03, size * 0.42);
   const decalScale: [number, number, number] = [size, size, projectionDepth];
 
   if (!targetMesh) return null;
@@ -117,8 +117,8 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
         depthTest
         depthWrite={false}
         polygonOffset
-        polygonOffsetFactor={isSelected ? -3 : -2}
-        polygonOffsetUnits={isSelected ? -3 : -2}
+        polygonOffsetFactor={isSelected ? -4 : -3}
+        polygonOffsetUnits={isSelected ? -4 : -3}
         roughness={0.6}
         metalness={0.02}
         emissive={isSelected ? '#1f1f1f' : '#000000'}

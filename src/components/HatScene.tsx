@@ -104,6 +104,7 @@ export default function HatScene({
           />
           <OrbitControls
             target={[0, 0.08, 0]}
+            enabled={!placementMode}
             enablePan={false}
             minDistance={1.8}
             maxDistance={5}
@@ -117,7 +118,7 @@ export default function HatScene({
       </Canvas>
       {placementMode && (
         <div className="absolute left-4 bottom-4 z-10 rounded border border-white/20 bg-black/70 px-3 py-2 text-[10px] tracking-wide uppercase text-white/80">
-          Click on the model to place the selected layer
+          Placement mode: click surface to stamp layer
         </div>
       )}
     </div>

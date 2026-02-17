@@ -113,7 +113,6 @@ export default function HatModel({
   const groupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
   const mainCapMeshRef = useRef<THREE.Mesh>(null!);
-  const draggingDecalRef = useRef<{ id: string; pointerId: number } | null>(null);
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF(MODEL_PATH);
 
@@ -296,9 +295,11 @@ export default function HatModel({
     const localNormal = localPointAlongNormal.sub(localPoint).normalize();
 
     if (localNormal.lengthSq() < 1e-8) localNormal.set(0, 0, 1);
+    const surfaceOffset = 0.0025;
+    const offsetLocalPoint = localPoint.clone().addScaledVector(localNormal, surfaceOffset);
 
     return {
-      position: [localPoint.x, localPoint.y, localPoint.z] as [number, number, number],
+      position: [offsetLocalPoint.x, offsetLocalPoint.y, offsetLocalPoint.z] as [number, number, number],
       normal: [localNormal.x, localNormal.y, localNormal.z] as [number, number, number],
       targetMeshName: hitMesh.name || undefined,
       targetParentName: hitMesh.parent?.name || undefined,
@@ -307,6 +308,7 @@ export default function HatModel({
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
     if (!selectedDecalId || !onDecalUpdate) return;
+    if (!placementMode) return;
     if (event.button !== 0) return;
 
     const placement = getHitPlacement(event);
@@ -315,35 +317,7 @@ export default function HatModel({
     event.stopPropagation();
     onDecalSelect?.(selectedDecalId);
     onDecalUpdate(selectedDecalId, placement);
-
-    if (placementMode) {
-      onPlacementComplete?.();
-      return;
-    }
-
-    draggingDecalRef.current = { id: selectedDecalId, pointerId: event.pointerId };
-    event.target.setPointerCapture?.(event.pointerId);
-  };
-
-  const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
-    const activeDrag = draggingDecalRef.current;
-    if (!activeDrag || !onDecalUpdate) return;
-    if (activeDrag.pointerId !== event.pointerId) return;
-
-    const placement = getHitPlacement(event);
-    if (!placement) return;
-
-    event.stopPropagation();
-    onDecalUpdate(activeDrag.id, placement);
-  };
-
-  const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
-    const activeDrag = draggingDecalRef.current;
-    if (!activeDrag || activeDrag.pointerId !== event.pointerId) return;
-
-    event.stopPropagation();
-    event.target.releasePointerCapture?.(event.pointerId);
-    draggingDecalRef.current = null;
+    onPlacementComplete?.();
   };
 
   const textY = mcCenter.y + mcSize.y * 0.12;
@@ -365,8 +339,6 @@ export default function HatModel({
         <primitive
           object={capMesh}
           onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
           onPointerMissed={() => onDecalSelect?.(null)}
         />
 

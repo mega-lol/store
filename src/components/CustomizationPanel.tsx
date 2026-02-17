@@ -718,7 +718,7 @@ export default function CustomizationPanel({
 
                 <p className="text-[10px] text-white/30 italic mt-2">
                   <Move className="inline h-3 w-3 mr-1" />
-                  Click and drag on the model surface to reposition
+                  Use "Place On Model", then click exactly where the layer should land
                 </p>
               </div>
             )}
