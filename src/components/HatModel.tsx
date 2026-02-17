@@ -177,19 +177,19 @@ function makeTextTexture(
   let fontSize =
     lineCount === 1
       ? maxLen > 15
-        ? 210
+        ? 260
         : maxLen > 10
-          ? 250
-          : 300
+          ? 310
+          : 380
       : lineCount === 2
         ? maxLen > 12
-          ? 185
+          ? 235
           : maxLen > 8
-            ? 230
-            : 270
+            ? 290
+            : 340
         : maxLen > 10
-          ? 165
-          : 210;
+          ? 210
+          : 265;
 
   const fontStack = toFontStack(fontFamily);
   const fontStr = `900 ${fontSize}px ${fontStack}`;
@@ -423,6 +423,15 @@ export default function HatModel({
     return makeTextTexture(lines, textColor, gl, fontFamily, textStyle);
   }, [backText, textColor, gl, fontFamily, textStyle]);
 
+  // Dispose textures on change/unmount
+  useEffect(() => {
+    return () => { frontTexture?.dispose(); };
+  }, [frontTexture]);
+
+  useEffect(() => {
+    return () => { backTexture?.dispose(); };
+  }, [backTexture]);
+
   useEffect(() => {
     capMesh.traverse((child) => {
       if (!(child as THREE.Mesh).isMesh) return;
@@ -568,8 +577,8 @@ export default function HatModel({
     mcCenter.z + mcSize.z * 0.04,
   ];
 
-  const frontTextScale: [number, number, number] = [mcSize.x * 0.58, mcSize.y * 0.34, Math.max(mcSize.z * 0.46, 0.09)];
-  const backTextScale: [number, number, number] = [mcSize.x * 0.48, mcSize.y * 0.26, Math.max(mcSize.z * 0.34, 0.07)];
+  const frontTextScale: [number, number, number] = [mcSize.x * 0.82, mcSize.y * 0.48, Math.max(mcSize.z * 0.8, 0.14)];
+  const backTextScale: [number, number, number] = [mcSize.x * 0.58, mcSize.y * 0.32, Math.max(mcSize.z * 0.5, 0.10)];
   const flagScale: [number, number, number] = [mcSize.x * 0.22, mcSize.y * 0.14, Math.max(mcSize.z * 0.25, 0.06)];
 
   return (
@@ -584,9 +593,9 @@ export default function HatModel({
         />
 
         {/* Fabric.js texture layer - applied to mainCap mesh */}
-        {useFabricTexture && mainCapMesh && (
+        {useFabricTexture && mainCapMesh && fabricCanvas && (
           <FabricTextureLayer
-            fabricCanvas={fabricCanvas!}
+            fabricCanvas={fabricCanvas}
             targetMesh={mainCapMesh}
           />
         )}
@@ -605,7 +614,7 @@ export default function HatModel({
 
         {/* Front text - only when NOT using Fabric texture */}
         {!useFabricTexture && mainCapDecalTarget && frontTexture && (
-          <ProjectedDecal mesh={mainCapDecalTargetRef} position={frontTextPos} rotation={[-0.12, 0, 0]} scale={frontTextScale}>
+          <ProjectedDecal mesh={mainCapDecalTargetRef} position={frontTextPos} rotation={[-0.18, 0, 0]} scale={frontTextScale}>
             <meshStandardMaterial
               map={frontTexture}
               transparent

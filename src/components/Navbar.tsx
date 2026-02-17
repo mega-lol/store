@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X, Search } from 'lucide-react';
-import { useCart } from '@/store/cartStore';
+import { Menu, X, Search } from 'lucide-react';
 
 const GLOBE_MENU_ITEMS = [
   { label: 'About', href: '#movement' },
@@ -14,21 +13,18 @@ const NAV_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/collection', label: 'Shop' },
   { to: '/designer', label: 'Designer' },
-  { to: '/cart', label: 'Cart' },
 ];
 
 const SEARCH_ITEMS = [
   { label: 'Home', to: '/', keywords: 'home landing movement mega' },
   { label: 'Shop', to: '/collection', keywords: 'shop catalog collection hats browse' },
   { label: 'Designer', to: '/designer', keywords: 'designer custom design create hat' },
-  { label: 'Cart', to: '/cart', keywords: 'cart checkout buy order' },
   { label: 'Pre-order Hat', to: '/designer', keywords: 'preorder pre-order buy hat purchase' },
   { label: 'MEGA Gold Hat', to: '/collection', keywords: 'mega gold white hat classic' },
   { label: 'World Editions', to: '/collection', keywords: 'country flag world culture edition heritage' },
 ];
 
 export default function Navbar() {
-  const { totalItems } = useCart();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const isHome = pathname === '/' || pathname === '';
@@ -218,29 +214,9 @@ export default function Navbar() {
                 </kbd>
               </button>
 
-              {/* Cart */}
-              <Link
-                to="/cart"
-                className={`relative p-2 rounded-full transition-colors ${
-                  dark
-                    ? 'text-white/50 hover:text-white hover:bg-white/5'
-                    : 'text-black/40 hover:text-black hover:bg-black/5'
-                }`}
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {totalItems > 0 && (
-                  <span
-                    className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold ${
-                      dark ? 'bg-white text-black' : 'bg-black text-white'
-                    }`}
-                  >
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
             </div>
 
-            {/* Mobile: search + cart + hamburger */}
+            {/* Mobile: search + hamburger */}
             <div className="flex md:hidden items-center gap-1">
               <button
                 onClick={() => setSearchOpen(true)}
@@ -250,23 +226,6 @@ export default function Navbar() {
               >
                 <Search className="h-4 w-4" />
               </button>
-              <Link
-                to="/cart"
-                className={`relative p-2 rounded-full transition-colors ${
-                  dark ? 'text-white/40 hover:text-white' : 'text-black/40 hover:text-black'
-                }`}
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {totalItems > 0 && (
-                  <span
-                    className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold ${
-                      dark ? 'bg-white text-black' : 'bg-black text-white'
-                    }`}
-                  >
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
                 className={`p-2 rounded-full transition-colors ${

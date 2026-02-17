@@ -8,8 +8,7 @@ import {
   FONTS, DEFAULT_HAT, TEXT_STYLES, PLACEMENT_ZONES, BUILT_IN_PRESETS,
   DesignPreset, PlacementZone, TextStyle,
 } from '@/types/hat';
-import { useCart } from '@/store/cartStore';
-import { ShoppingCart, Share2, Plus, Trash2, Upload, Image as ImageIcon, Type, RotateCw, Move, Sparkles, Save, FolderOpen, Wand2 } from 'lucide-react';
+import { Share2, Plus, Trash2, Upload, Image as ImageIcon, Type, RotateCw, Move, Sparkles, Save, FolderOpen, Wand2, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { applySiteFont, ensureFontLoaded, toFontStack } from '@/lib/fonts';
 import { v4 as uuidv4 } from 'uuid';
@@ -41,7 +40,6 @@ export default function CustomizationPanel({
   onSelectDecal,
   onStartPlacement,
 }: CustomizationPanelProps) {
-  const { addItem } = useCart();
   const { toast } = useToast();
   const [googleFontName, setGoogleFontName] = useState('');
   const [canvasBaseUrl, setCanvasBaseUrl] = useState<string | null>(null);
@@ -198,11 +196,6 @@ export default function CustomizationPanel({
     if (!canvas) return;
     update({ texture: canvas.toDataURL('image/png') });
     toast({ title: 'Texture Applied', description: 'Canvas design is now your product texture.' });
-  };
-
-  const handleAddToCart = () => {
-    addItem(config);
-    toast({ title: 'Added to cart', description: 'Your custom product has been added.' });
   };
 
   const handleMintNew = () => {
@@ -993,22 +986,24 @@ export default function CustomizationPanel({
             Save Design
           </Button>
         </div>
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] tracking-[0.2em] uppercase text-white/30">Pre-order</span>
-          <span className="text-xl font-bold text-white">$50</span>
-        </div>
-        <Button onClick={handleAddToCart} className="w-full h-10 text-xs font-bold tracking-[0.15em] uppercase bg-white text-black hover:bg-white/90" size="lg">
-          <ShoppingCart className="mr-2 h-3.5 w-3.5" />
-          Pre-order Now
-        </Button>
+        <a
+          href="https://hanzo.ai"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block"
+        >
+          <Button className="w-full h-10 text-xs font-bold tracking-[0.15em] uppercase bg-white text-black hover:bg-white/90" size="lg">
+            <CreditCard className="mr-2 h-3.5 w-3.5" />
+            Pay via Hanzo
+          </Button>
+        </a>
         <button onClick={handleShare} className="w-full h-8 text-[10px] tracking-[0.2em] uppercase text-white/30 hover:text-white border border-white/5 hover:border-white/20 transition-colors flex items-center justify-center gap-2">
           <Share2 className="h-3 w-3" />
           Share Design
         </button>
-        <div className="mt-3 border border-white/10 p-3 text-[10px] text-white/40 leading-relaxed">
-          <span className="block text-white/70 uppercase tracking-[0.15em] mb-1">FAQ</span>
-          New designs require at least 1,000 pre-orders before release.
-        </div>
+        <p className="mt-2 text-[9px] text-white/25 text-center tracking-[0.1em]">
+          Payments by Hanzo AI
+        </p>
       </div>
     </div>
   );

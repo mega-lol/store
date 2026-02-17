@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { ThreeEvent } from '@react-three/fiber';
-import { Canvas as FabricCanvas } from 'fabric';
+import { Canvas as FabricCanvas, Point } from 'fabric';
 
 const CANVAS_SIZE = 2048;
 
@@ -34,31 +34,42 @@ function dispatchToFabric(
 
   // Override getBoundingClientRect for the offscreen canvas so Fabric computes correct coords
   const origGetBCR = upperEl.getBoundingClientRect;
-  upperEl.getBoundingClientRect = () => ({
-    left: 0,
-    top: 0,
-    right: CANVAS_SIZE,
-    bottom: CANVAS_SIZE,
-    width: CANVAS_SIZE,
-    height: CANVAS_SIZE,
-    x: 0,
-    y: 0,
-    toJSON() { return this; },
-  });
+  try {
+    upperEl.getBoundingClientRect = () => ({
+      left: 0,
+      top: 0,
+      right: CANVAS_SIZE,
+      bottom: CANVAS_SIZE,
+      width: CANVAS_SIZE,
+      height: CANVAS_SIZE,
+      x: 0,
+      y: 0,
+      toJSON() { return this; },
+    });
 
-  const evt = new MouseEvent(type, {
-    bubbles: true,
-    cancelable: true,
-    view: window,
-    clientX: canvasX,
-    clientY: canvasY,
-    button: 0,
-  });
+    const evt = new MouseEvent(type, {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+      clientX: canvasX,
+      clientY: canvasY,
+      button: 0,
+    });
 
-  upperEl.dispatchEvent(evt);
+    upperEl.dispatchEvent(evt);
+  } finally {
+    upperEl.getBoundingClientRect = origGetBCR;
+  }
+}
 
-  // Restore
-  upperEl.getBoundingClientRect = origGetBCR;
+/** Check if any Fabric object contains the given canvas-space point */
+function hitTestFabric(fc: FabricCanvas, x: number, y: number): boolean {
+  const point = new Point(x, y);
+  const objects = fc.getObjects();
+  for (let i = objects.length - 1; i >= 0; i--) {
+    if (objects[i].containsPoint(point)) return true;
+  }
+  return false;
 }
 
 export default function useUvPointerBridge({
@@ -74,11 +85,7 @@ export default function useUvPointerBridge({
     const { x, y } = uvToCanvas(e.uv.x, e.uv.y, canvasSize);
 
     // Check if there's a Fabric object at this position
-    const target = fabricCanvas.findTarget(
-      new MouseEvent('mousedown', { clientX: x, clientY: y }) as any,
-    );
-
-    if (target) {
+    if (hitTestFabric(fabricCanvas, x, y)) {
       e.stopPropagation();
       draggingRef.current = true;
       onFabricHit?.(true);

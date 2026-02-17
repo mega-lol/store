@@ -9,11 +9,10 @@ export default function Footer() {
           ADXYZ Inc
         </a>
         <span className="uppercase tracking-[0.15em]">
-          Payments via{' '}
+          Payments by{' '}
           <a href="https://hanzo.ai" target="_blank" rel="noopener noreferrer" className="hover:text-white/80 transition-colors">
-            Hanzo
+            Hanzo AI
           </a>
-          {' '}Commerce
         </span>
       </div>
     </footer>

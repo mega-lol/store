@@ -37,12 +37,13 @@ export default function Designer() {
 
   // Sync config text/color/font/style to Fabric canvas
   useEffect(() => {
+    if (!fabric.canvas) return;
     fabric.setText(config.text, {
       fill: config.textColor,
       fontFamily: toFontStack(config.font),
       textStyle: config.textStyle,
     });
-  }, [config.text, config.textColor, config.font, config.textStyle, fabric.setText]);
+  }, [config.text, config.textColor, config.font, config.textStyle, fabric.canvas, fabric.setText]);
 
   const handleDecalUpdate = (id: string, updates: Partial<Decal>) => {
     setConfig(prev => ({

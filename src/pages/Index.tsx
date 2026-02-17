@@ -1,38 +1,106 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import HatScene from '@/components/HatScene';
 import { DEFAULT_HAT } from '@/types/hat';
-import { useCart, getHatPrice } from '@/store/cartStore';
-import { useToast } from '@/hooks/use-toast';
 
 const config = DEFAULT_HAT;
-const defaultPrice = getHatPrice(config);
 
-const QUOTES = [
-  {
-    text: 'Every culture carries something powerful. When we honor each other, we grow stronger.',
-    author: 'MEGA Earth',
-  },
-  {
-    text: 'Kindness travels. One hat, one cause, one step closer to the world we want.',
-    author: 'MEGA Earth',
-  },
-  {
-    text: 'Different flags. Different stories. One shared home. Let\u2019s show up for each other.',
-    author: 'MEGA Earth',
-  },
+const TRANSLATIONS = [
+  { text: 'Make Earth Great Again', lang: 'English' },
+  { text: 'Haz la Tierra Grandiosa de Nuevo', lang: 'Español' },
+  { text: 'Rendons la Terre Grande à Nouveau', lang: 'Français' },
+  { text: 'Macht die Erde Wieder Großartig', lang: 'Deutsch' },
+  { text: 'Rendi la Terra Grande di Nuovo', lang: 'Italiano' },
+  { text: 'Faça a Terra Grande de Novo', lang: 'Português' },
+  { text: '地球を再び偉大に', lang: '日本語' },
+  { text: '让地球再次伟大', lang: '中文' },
+  { text: '지구를 다시 위대하게', lang: '한국어' },
+  { text: 'Сделаем Землю Снова Великой', lang: 'Русский' },
+  { text: 'Зробимо Землю Знову Великою', lang: 'Українська' },
+  { text: 'पृथ्वी को फिर से महान बनाओ', lang: 'हिन्दी' },
+  { text: 'اجعل الأرض عظيمة مرة أخرى', lang: 'العربية' },
+  { text: 'Dünyayı Yeniden Harika Yap', lang: 'Türkçe' },
+  { text: 'Κάνε τη Γη Ξανά Σπουδαία', lang: 'Ελληνικά' },
+  { text: 'Maak de Aarde Weer Geweldig', lang: 'Nederlands' },
+  { text: 'Gör Jorden Stor Igen', lang: 'Svenska' },
+  { text: 'Uczyńmy Ziemię Znów Wielką', lang: 'Polski' },
+  { text: 'ทำให้โลกยิ่งใหญ่อีกครั้ง', lang: 'ไทย' },
+  { text: 'Làm Cho Trái Đất Vĩ Đại Trở Lại', lang: 'Tiếng Việt' },
+  { text: 'Fanya Dunia Kuwa Kuu Tena', lang: 'Kiswahili' },
+  { text: 'Jadikan Bumi Hebat Lagi', lang: 'Bahasa' },
+  { text: 'Gawing Dakila Muli ang Mundo', lang: 'Filipino' },
+  { text: 'ធ្វើឱ្យផែនដីអស្ចារ្យម្ដងទៀត', lang: 'ភាសាខ្មែរ' },
+  { text: 'زمین را دوباره بزرگ کنیم', lang: 'فارسی' },
+  { text: 'ምድርን እንደገና ታላቅ እናድርግ', lang: 'አማርኛ' },
+  { text: 'Fac Terram Iterum Magnam', lang: 'Latīna' },
+  { text: 'Déan an Domhan Iontach Arís', lang: 'Gaeilge' },
+  { text: 'Whakanuia te Ao Anō', lang: 'Te Reo Māori' },
+  { text: 'E Hoʻomaikaʻi Hou i ka Honua', lang: 'ʻŌlelo Hawaiʻi' },
+  { text: 'Зробімо Зямлю Зноў Вялікай', lang: 'Беларуская' },
+  { text: 'Učinimo Zemlju Ponovo Velikom', lang: 'Srpski' },
+  { text: 'הפכו את כדור הארץ לגדול שוב', lang: 'עברית' },
+  { text: 'Yenza uMhlaba Ube Mkhulu Futhi', lang: 'isiZulu' },
+  { text: 'Jẹ́ kí Ayé Tóbi Léèkànsí', lang: 'Yorùbá' },
 ];
 
 export default function Index() {
-  const { addItem } = useCart();
-  const { toast } = useToast();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [phase, setPhase] = useState<'in' | 'hold' | 'out'>('in');
 
-  const handleBuy = () => {
-    addItem(config);
-    toast({ title: 'Added to cart', description: 'MEGA hat added to your cart.' });
+  useEffect(() => {
+    const FADE_IN = 600;
+    const HOLD = 2200;
+    const FADE_OUT = 600;
+
+    let timeout: ReturnType<typeof setTimeout>;
+
+    const cycle = () => {
+      setPhase('in');
+
+      timeout = setTimeout(() => {
+        setPhase('hold');
+
+        timeout = setTimeout(() => {
+          setPhase('out');
+
+          timeout = setTimeout(() => {
+            setCurrentIndex((i) => (i + 1) % TRANSLATIONS.length);
+            cycle();
+          }, FADE_OUT);
+        }, HOLD);
+      }, FADE_IN);
+    };
+
+    cycle();
+    return () => clearTimeout(timeout);
+  }, []);
+
+  const t = TRANSLATIONS[currentIndex];
+
+  const transitionStyle: React.CSSProperties = {
+    transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
+    opacity: phase === 'hold' || phase === 'in' ? 1 : 0,
+    transform:
+      phase === 'in'
+        ? 'translateY(0)'
+        : phase === 'hold'
+          ? 'translateY(0)'
+          : 'translateY(-12px)',
+    ...(phase === 'in' && currentIndex > 0
+      ? { animation: 'megaSlideIn 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards' }
+      : {}),
   };
 
   return (
     <main className="min-h-screen bg-white text-black overflow-x-hidden pt-12">
+      {/* Keyframes for slide animation */}
+      <style>{`
+        @keyframes megaSlideIn {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
       {/* ─── HERO ─── */}
       <section className="relative h-[100dvh] -mt-12 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-950 to-stone-950" />
@@ -57,7 +125,6 @@ export default function Index() {
 
         {/* Headline */}
         <div className="absolute top-20 left-6 md:left-12 z-10 max-w-xl animate-fade-up delay-300" style={{ opacity: 0 }}>
-          <p className="text-[10px] tracking-[0.4em] uppercase text-white/40 mb-3">MEGA &middot; Shop &middot; Designer</p>
           <h1 className="text-5xl sm:text-6xl md:text-8xl lg:text-[7.5rem] font-black tracking-[-0.06em] leading-[0.84] text-white drop-shadow-[0_10px_45px_rgba(0,0,0,0.7)]">
             MEGA<br />EARTH!
           </h1>
@@ -122,21 +189,21 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ─── PEOPLE OF EARTH ─── */}
-      <section className="py-20 md:py-28 bg-stone-50 border-t border-black/5">
+      {/* ─── EVERY LANGUAGE ─── */}
+      <section className="py-28 md:py-40 bg-stone-50 border-t border-black/5 overflow-hidden">
         <div className="container max-w-5xl mx-auto px-6 md:px-12">
-          <p className="text-[10px] tracking-[0.4em] uppercase text-black/30 mb-12 text-center">People of Earth</p>
-          <div className="grid gap-12 md:gap-16">
-            {QUOTES.map((q, i) => (
-              <blockquote key={i} className="text-center max-w-2xl mx-auto">
-                <p className="text-lg md:text-xl text-black/60 leading-relaxed italic">
-                  &ldquo;{q.text}&rdquo;
-                </p>
-                <cite className="block mt-3 text-[11px] tracking-[0.3em] uppercase text-black/30 not-italic">
-                  — {q.author}
-                </cite>
-              </blockquote>
-            ))}
+          <p className="text-[10px] tracking-[0.4em] uppercase text-black/30 mb-16 text-center">
+            Every Language &middot; Every Culture &middot; One Message
+          </p>
+          <div className="flex flex-col items-center justify-center min-h-[180px] md:min-h-[240px]">
+            <div style={transitionStyle} className="text-center">
+              <p className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.05] text-black/85">
+                {t.text}
+              </p>
+              <p className="mt-5 text-[11px] tracking-[0.35em] uppercase text-black/25 font-medium">
+                {t.lang}
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -227,37 +294,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* ─── FOOTER ─── */}
-      <footer className="py-8 border-t border-black/5 bg-white">
-        <div className="container max-w-5xl mx-auto px-6 md:px-12 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[10px] tracking-[0.2em] uppercase text-black/25">
-            Make Earth Great Again &copy; {new Date().getFullYear()}
-          </p>
-          <div className="flex items-center gap-6">
-            <a
-              href="mailto:support@megamovement.org"
-              className="text-[10px] tracking-[0.15em] uppercase text-black/25 hover:text-black/60 transition-colors"
-            >
-              Contact
-            </a>
-            <Link
-              to="/collection"
-              className="text-[10px] tracking-[0.15em] uppercase text-black/25 hover:text-black/60 transition-colors"
-            >
-              Shop
-            </Link>
-            <Link
-              to="/designer"
-              className="text-[10px] tracking-[0.15em] uppercase text-black/25 hover:text-black/60 transition-colors"
-            >
-              Designer
-            </Link>
-          </div>
-          <p className="text-[9px] tracking-[0.1em] text-black/15">
-            ADXYZ Inc &middot; Payments via Hanzo Commerce
-          </p>
-        </div>
-      </footer>
     </main>
   );
 }

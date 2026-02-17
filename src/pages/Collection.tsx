@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import HatScene from '@/components/HatScene';
 import { COUNTRY_HATS, COUNTRY_CODES, HatConfig, DEFAULT_BACK_DECALS } from '@/types/hat';
-import { getHatPrice } from '@/store/cartStore';
 
 const coreEditions: HatConfig[] = [
   {
@@ -59,7 +58,7 @@ const coreEditions: HatConfig[] = [
   },
 ];
 
-const featuredCountryCodes = new Set(['IN', 'IR', 'UA', 'KH']);
+const featuredCountryCodes = new Set(['IN', 'IR', 'UA', 'KH', 'VA']);
 
 export default function CollectionPage() {
   const countryEditions = COUNTRY_HATS.filter((hat) => featuredCountryCodes.has(hat.countryCode));
@@ -110,9 +109,12 @@ export default function CollectionPage() {
                     className="w-full h-full"
                   />
                 </div>
-                <div className="p-4 border-t border-white/10">
-                  <p className="text-xs tracking-widest uppercase text-white/70 mb-1">{hat.backText || 'Core'}</p>
-                  <p className="text-[10px] text-white/40">${getHatPrice(hat).toFixed(2)}</p>
+                <div className="p-4 border-t border-white/10 space-y-1">
+                  <p className="text-xs tracking-widest uppercase text-white/70">{hat.text.replace('\n', ' ')}</p>
+                  <p className="text-[10px] text-white/35">{hat.textStyle.replace('-', ' ')} · {hat.font} · {hat.size}</p>
+                  {hat.backText && (
+                    <p className="text-[10px] text-white/25 truncate">Back: {hat.backText}</p>
+                  )}
                 </div>
               </div>
             ))}
@@ -153,12 +155,15 @@ export default function CollectionPage() {
                     className="w-full h-full"
                   />
                 </div>
-                <div className="p-4 border-t border-white/10 flex items-center justify-between">
-                  <div>
+                <div className="p-4 border-t border-white/10">
+                  <div className="flex items-center justify-between mb-1">
                     <p className="text-xs tracking-widest uppercase text-white/80">{hat.countryName}</p>
-                    <p className="text-[10px] text-white/40">National colors preset</p>
+                    <span className="text-[10px] tracking-[0.2em] text-white/30">{hat.countryCode}</span>
                   </div>
-                  <span className="text-[10px] tracking-[0.2em] text-white/30">{hat.countryCode}</span>
+                  <p className="text-[10px] text-white/35">{hat.textStyle.replace('-', ' ')} · {hat.font} · {hat.size}</p>
+                  {hat.backText && (
+                    <p className="text-[10px] text-white/25 truncate mt-0.5">Back: {hat.backText}</p>
+                  )}
                 </div>
               </div>
             ))}
