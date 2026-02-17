@@ -74,8 +74,9 @@ export default function Cart() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Checkout could not be started.';
       const missingBackend = /404|page not found/i.test(message);
+      const paymentsDisabled = /Payments are not configured|square is not configured/i.test(message);
 
-      if (missingBackend) {
+      if (missingBackend || paymentsDisabled) {
         toast({
           title: 'Pre-order placed',
           description: 'Payments are not enabled yet. We will follow up with a payment link.',
