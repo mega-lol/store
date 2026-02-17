@@ -102,7 +102,7 @@ export default function Index() {
   };
 
   return (
-    <main className="min-h-screen bg-white text-black overflow-x-hidden pt-12">
+    <main className="min-h-screen bg-white text-black overflow-x-hidden">
       {/* Keyframes for slide animation */}
       <style>{`
         @keyframes megaSlideIn {
@@ -112,7 +112,7 @@ export default function Index() {
       `}</style>
 
       {/* ─── HERO ─── */}
-      <section className="relative h-[100dvh] -mt-12 overflow-hidden">
+      <section className="relative h-[100dvh] overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-black via-neutral-950 to-stone-950" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.14)_0%,transparent_55%)]" />
 
