@@ -10,6 +10,10 @@ export interface Decal {
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
+  normal?: [number, number, number];
+  spin?: number;
+  targetMeshName?: string;
+  targetParentName?: string;
 }
 
 export interface HatConfig {
@@ -62,12 +66,12 @@ export const DEFAULT_HAT: HatConfig = {
   id: '',
   hatColor: '#FFFFFF',
   bandColor: '#FFFFFF',
-  text: 'MAKE EARTH\nGREAT AGAIN',
+  text: 'YOUR BRAND',
   backText: '',
   font: 'Vinegar',
   textColor: '#000000',
   size: 'M',
-  flagCode: 'US',
+  flagCode: undefined,
   decals: [],
 };
 
@@ -76,7 +80,7 @@ export const COUNTRY_HATS: CountryHat[] = [
     id: 'india',
     hatColor: '#FFFFFF',
     bandColor: '#FFFFFF',
-    text: 'MAKE INDIA\nGREAT AGAIN',
+    text: 'INDIA\nEDITION',
     backText: 'INDIA',
     font: 'Vinegar',
     textColor: '#000000',
@@ -90,7 +94,7 @@ export const COUNTRY_HATS: CountryHat[] = [
     id: 'iran',
     hatColor: '#FFFFFF',
     bandColor: '#FFFFFF',
-    text: 'MAKE IRAN\nGREAT AGAIN',
+    text: 'IRAN\nEDITION',
     backText: 'IRAN',
     font: 'Vinegar',
     textColor: '#000000',
@@ -104,7 +108,7 @@ export const COUNTRY_HATS: CountryHat[] = [
     id: 'cambodia',
     hatColor: '#FFFFFF',
     bandColor: '#FFFFFF',
-    text: 'MAKE CAMBODIA\nGREAT AGAIN',
+    text: 'CAMBODIA\nEDITION',
     backText: 'CAMBODIA',
     font: 'Vinegar',
     textColor: '#000000',
@@ -118,7 +122,7 @@ export const COUNTRY_HATS: CountryHat[] = [
     id: 'ukraine',
     hatColor: '#FFFFFF',
     bandColor: '#FFFFFF',
-    text: 'MAKE UKRAINE\nGREAT AGAIN',
+    text: 'UKRAINE\nEDITION',
     backText: 'UKRAINE',
     font: 'Vinegar',
     textColor: '#000000',

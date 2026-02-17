@@ -13,7 +13,7 @@ export default function Index() {
 
   const handleBuy = () => {
     addItem(config);
-    toast({ title: 'Added to cart', description: `${config.text.replace(/\n/g, ' ')} hat added.` });
+    toast({ title: 'Added to cart', description: `${config.text.replace(/\n/g, ' ')} product added.` });
   };
 
   return (
@@ -22,7 +22,7 @@ export default function Index() {
       <div className="absolute inset-0 bg-gradient-to-br from-neutral-100 via-neutral-50 to-stone-100" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.04)_100%)]" />
 
-      {/* 3D Hat - full viewport, centered and prominent */}
+      {/* 3D product preview - full viewport, centered and prominent */}
       <div className="absolute inset-0 animate-scale-in" style={{ opacity: 0 }}>
         <HatScene
           hatColor={config.hatColor}
@@ -39,21 +39,21 @@ export default function Index() {
 
       {/* Top-left branding */}
       <div className="absolute top-16 left-6 z-10 animate-fade-up delay-300" style={{ opacity: 0 }}>
-        <p className="text-[9px] tracking-[0.4em] uppercase text-black/30 mb-2">Make Earth Great Again</p>
+        <p className="text-[9px] tracking-[0.4em] uppercase text-black/30 mb-2">3D Clothing Designer</p>
         <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter leading-[0.85] text-black/90">
-          MEGA
+          STUDIO
         </h1>
       </div>
 
       {/* Bottom actions */}
       <div className="absolute bottom-8 left-6 z-10 animate-fade-up delay-500" style={{ opacity: 0 }}>
-        <p className="text-[10px] tracking-[0.3em] uppercase text-black/30 mb-3">Any country. Any language.</p>
+        <p className="text-[10px] tracking-[0.3em] uppercase text-black/30 mb-3">Ball caps first. More apparel next.</p>
         <div className="flex items-center gap-3">
           <button
             onClick={handleBuy}
             className="h-10 px-8 bg-black text-white text-xs tracking-[0.2em] uppercase font-bold hover:bg-black/80 transition-colors"
           >
-            Buy ${defaultPrice}
+            Pre-order ${defaultPrice}
           </button>
           <Link
             to="/designer"

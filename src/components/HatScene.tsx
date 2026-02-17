@@ -19,6 +19,8 @@ interface HatSceneProps {
   onDecalUpdate?: (id: string, updates: Partial<Decal>) => void;
   selectedDecalId?: string;
   onDecalSelect?: (id: string | null) => void;
+  placementMode?: boolean;
+  onPlacementComplete?: () => void;
   autoRotate?: boolean;
   className?: string;
 }
@@ -53,6 +55,8 @@ export default function HatScene({
   onDecalUpdate,
   selectedDecalId,
   onDecalSelect,
+  placementMode = false,
+  onPlacementComplete,
   autoRotate = false,
   className,
 }: HatSceneProps) {
@@ -87,6 +91,8 @@ export default function HatScene({
             onDecalUpdate={onDecalUpdate}
             selectedDecalId={selectedDecalId}
             onDecalSelect={onDecalSelect}
+            placementMode={placementMode}
+            onPlacementComplete={onPlacementComplete}
             autoRotate={autoRotate}
           />
           <ContactShadows
@@ -109,6 +115,11 @@ export default function HatScene({
           />
         </Suspense>
       </Canvas>
+      {placementMode && (
+        <div className="absolute left-4 bottom-4 z-10 rounded border border-white/20 bg-black/70 px-3 py-2 text-[10px] tracking-wide uppercase text-white/80">
+          Click on the model to place the selected layer
+        </div>
+      )}
     </div>
   );
 }

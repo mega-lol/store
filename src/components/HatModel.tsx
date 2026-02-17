@@ -1,5 +1,5 @@
 import { useRef, useMemo, useEffect } from 'react';
-import { useFrame, useThree, useLoader } from '@react-three/fiber';
+import { useFrame, useThree, useLoader, ThreeEvent } from '@react-three/fiber';
 import { useGLTF, Decal as ProjectedDecal } from '@react-three/drei';
 import * as THREE from 'three';
 import { Decal as HatDecal } from '@/types/hat';
@@ -19,12 +19,14 @@ interface HatModelProps {
   onDecalUpdate?: (id: string, updates: Partial<HatDecal>) => void;
   selectedDecalId?: string;
   onDecalSelect?: (id: string | null) => void;
+  placementMode?: boolean;
+  onPlacementComplete?: () => void;
   autoRotate?: boolean;
 }
 
 const MODEL_PATH = `${import.meta.env.BASE_URL}models/baseball_cap.glb`;
 const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
-const FABRIC_MATERIALS = new Set(['baseballCap']);
+const FABRIC_MATERIALS = new Set(['baseballCap', 'baseballcap', 'cap', 'hat', 'fabric']);
 
 function makeTextTexture(
   lines: string[],
@@ -104,15 +106,20 @@ export default function HatModel({
   onDecalUpdate,
   selectedDecalId,
   onDecalSelect,
+  placementMode = false,
+  onPlacementComplete,
   autoRotate = false,
 }: HatModelProps) {
   const groupRef = useRef<THREE.Group>(null);
+  const modelRef = useRef<THREE.Group>(null);
   const mainCapMeshRef = useRef<THREE.Mesh>(null!);
+  const draggingDecalRef = useRef<{ id: string; pointerId: number } | null>(null);
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF(MODEL_PATH);
 
-  const hatTexture = texture ? useLoader(THREE.TextureLoader, texture) : null;
-  if (hatTexture) {
+  const hasCustomTexture = Boolean(texture);
+  const hatTexture = useLoader(THREE.TextureLoader, texture || TRANSPARENT_PIXEL);
+  if (hasCustomTexture) {
     hatTexture.wrapS = hatTexture.wrapT = THREE.RepeatWrapping;
     hatTexture.repeat.set(2, 2);
     hatTexture.colorSpace = THREE.SRGBColorSpace;
@@ -135,6 +142,17 @@ export default function HatModel({
   });
 
   const capMesh = useMemo(() => gltfScene.clone(true), [gltfScene]);
+
+  const meshList = useMemo(() => {
+    const list: THREE.Mesh[] = [];
+    capMesh.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        list.push(child as THREE.Mesh);
+      }
+    });
+    return list;
+  }, [capMesh]);
+
   const mainCapMesh = useMemo(() => {
     let target: THREE.Mesh | null = null;
     let fallback: THREE.Mesh | null = null;
@@ -204,7 +222,14 @@ export default function HatModel({
       const remat = (material: THREE.Material) => {
         const original = material as THREE.MeshStandardMaterial;
         const materialName = original.name || material.name || '';
-        const isFabric = FABRIC_MATERIALS.has(materialName);
+        const fabricHint = `${materialName} ${mesh.name} ${mesh.parent?.name || ''}`.toLowerCase();
+        const isFabric =
+          FABRIC_MATERIALS.has(materialName) ||
+          FABRIC_MATERIALS.has(materialName.toLowerCase()) ||
+          fabricHint.includes('cap') ||
+          fabricHint.includes('visor') ||
+          fabricHint.includes('liner') ||
+          fabricHint.includes('fabric');
 
         if (isFabric) {
           const mat = original.clone();
@@ -213,7 +238,7 @@ export default function HatModel({
           const isBand = mesh.parent?.name === 'innerLiner';
           mat.color.set(isBand ? (bandColor || hatColor) : hatColor);
 
-          if (hatTexture && !isBand) {
+          if (hasCustomTexture && !isBand) {
             mat.map = hatTexture;
             mat.color.set('#ffffff');
           }
@@ -242,7 +267,84 @@ export default function HatModel({
         mesh.material = remat(mesh.material);
       }
     });
-  }, [capMesh, hatColor, bandColor, hatTexture]);
+  }, [capMesh, hatColor, bandColor, hatTexture, hasCustomTexture]);
+
+  const getTargetMesh = (decal: HatDecal): THREE.Mesh | null => {
+    if (decal.targetMeshName) {
+      const exact = meshList.find(
+        (mesh) =>
+          mesh.name === decal.targetMeshName &&
+          (!decal.targetParentName || mesh.parent?.name === decal.targetParentName),
+      );
+      if (exact) return exact;
+
+      const sameName = meshList.find((mesh) => mesh.name === decal.targetMeshName);
+      if (sameName) return sameName;
+    }
+    return mainCapMesh;
+  };
+
+  const getHitPlacement = (event: ThreeEvent<PointerEvent>) => {
+    if (!modelRef.current || !event.face || !(event.object as THREE.Mesh).isMesh) return null;
+
+    const hitMesh = event.object as THREE.Mesh;
+    const worldPoint = event.point.clone();
+
+    const localPoint = modelRef.current.worldToLocal(worldPoint.clone());
+    const worldNormal = event.face.normal.clone().transformDirection(hitMesh.matrixWorld).normalize();
+    const localPointAlongNormal = modelRef.current.worldToLocal(worldPoint.clone().add(worldNormal));
+    const localNormal = localPointAlongNormal.sub(localPoint).normalize();
+
+    if (localNormal.lengthSq() < 1e-8) localNormal.set(0, 0, 1);
+
+    return {
+      position: [localPoint.x, localPoint.y, localPoint.z] as [number, number, number],
+      normal: [localNormal.x, localNormal.y, localNormal.z] as [number, number, number],
+      targetMeshName: hitMesh.name || undefined,
+      targetParentName: hitMesh.parent?.name || undefined,
+    };
+  };
+
+  const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
+    if (!selectedDecalId || !onDecalUpdate) return;
+    if (event.button !== 0) return;
+
+    const placement = getHitPlacement(event);
+    if (!placement) return;
+
+    event.stopPropagation();
+    onDecalSelect?.(selectedDecalId);
+    onDecalUpdate(selectedDecalId, placement);
+
+    if (placementMode) {
+      onPlacementComplete?.();
+      return;
+    }
+
+    draggingDecalRef.current = { id: selectedDecalId, pointerId: event.pointerId };
+    event.target.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
+    const activeDrag = draggingDecalRef.current;
+    if (!activeDrag || !onDecalUpdate) return;
+    if (activeDrag.pointerId !== event.pointerId) return;
+
+    const placement = getHitPlacement(event);
+    if (!placement) return;
+
+    event.stopPropagation();
+    onDecalUpdate(activeDrag.id, placement);
+  };
+
+  const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
+    const activeDrag = draggingDecalRef.current;
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) return;
+
+    event.stopPropagation();
+    event.target.releasePointerCapture?.(event.pointerId);
+    draggingDecalRef.current = null;
+  };
 
   const textY = mcCenter.y + mcSize.y * 0.12;
   const frontTextPos: [number, number, number] = [mcCenter.x, textY, mcFrontZ + mcSize.z * 0.008];
@@ -259,15 +361,21 @@ export default function HatModel({
 
   return (
     <group ref={groupRef} scale={displayScale}>
-      <group position={[-center.x, -center.y, -center.z]}>
-        <primitive object={capMesh} onPointerMissed={() => onDecalSelect?.(null)} />
+      <group ref={modelRef} position={[-center.x, -center.y, -center.z]}>
+        <primitive
+          object={capMesh}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerMissed={() => onDecalSelect?.(null)}
+        />
 
         {decals.map((decal) => (
           <DecalLayer
             key={decal.id}
             decal={decal}
+            targetMesh={getTargetMesh(decal)}
             isSelected={selectedDecalId === decal.id}
-            onUpdate={onDecalUpdate}
             onClick={() => {
               onDecalSelect?.(decal.id);
             }}

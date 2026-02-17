@@ -17,13 +17,13 @@ export default function Navbar() {
         <Link to="/" className={`text-sm tracking-[0.3em] uppercase transition-colors ${
           isHome ? 'text-black/80 hover:text-black' : 'text-white/80 hover:text-white'
         }`}>
-          MEGA
+          STUDIO
         </Link>
         <div className="flex items-center gap-4">
           <Link to="/collection" className={`text-[10px] tracking-[0.2em] uppercase transition-colors ${
             isHome ? 'text-black/40 hover:text-black' : 'text-white/40 hover:text-white'
           }`}>
-            Collection
+            Catalog
           </Link>
           <Link to="/designer" className={`text-[10px] tracking-[0.2em] uppercase transition-colors ${
             isHome ? 'text-black/40 hover:text-black' : 'text-white/40 hover:text-white'

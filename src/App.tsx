@@ -9,7 +9,7 @@ import Index from "./pages/Index";
 import Designer from "./pages/Designer";
 import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
-import Collection from "./pages/MGCollection";
+import Collection from "./pages/Collection";
 
 const queryClient = new QueryClient();
 

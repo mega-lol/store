@@ -4,13 +4,13 @@ import HatScene from '@/components/HatScene';
 import { COUNTRY_HATS, COUNTRY_CODES, HatConfig } from '@/types/hat';
 import { getHatPrice } from '@/store/cartStore';
 
-const megaEditions: HatConfig[] = [
+const coreEditions: HatConfig[] = [
   {
-    id: 'edition-white',
+    id: 'white-black',
     hatColor: '#FFFFFF',
     bandColor: '#FFFFFF',
-    text: 'MAKE EARTH\nGREAT AGAIN',
-    backText: 'MEGA',
+    text: 'WHITE HAT',
+    backText: 'STANDARD',
     font: 'Vinegar',
     textColor: '#000000',
     size: 'M',
@@ -18,11 +18,11 @@ const megaEditions: HatConfig[] = [
     decals: [],
   },
   {
-    id: 'edition-black',
+    id: 'black-white',
     hatColor: '#000000',
     bandColor: '#000000',
-    text: 'MAKE EARTH\nGREAT AGAIN',
-    backText: 'MEGA',
+    text: 'BLACK HAT',
+    backText: 'DARK',
     font: 'Vinegar',
     textColor: '#FFFFFF',
     size: 'M',
@@ -30,10 +30,10 @@ const megaEditions: HatConfig[] = [
     decals: [],
   },
   {
-    id: 'edition-whiteout',
+    id: 'white-white',
     hatColor: '#FFFFFF',
     bandColor: '#FFFFFF',
-    text: 'MAKE EARTH\nGREAT AGAIN',
+    text: 'WHITEOUT',
     backText: 'WHITEOUT',
     font: 'Vinegar',
     textColor: '#FFFFFF',
@@ -42,10 +42,10 @@ const megaEditions: HatConfig[] = [
     decals: [],
   },
   {
-    id: 'edition-blackout',
+    id: 'black-black',
     hatColor: '#000000',
     bandColor: '#000000',
-    text: 'MAKE EARTH\nGREAT AGAIN',
+    text: 'BLACKOUT',
     backText: 'BLACKOUT',
     font: 'Vinegar',
     textColor: '#000000',
@@ -65,11 +65,11 @@ export default function CollectionPage() {
     <main className="min-h-screen pt-14 bg-black text-white">
       <section className="border-b border-white/10">
         <div className="container py-16">
-          <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-4">Collection</p>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[0.9] mb-4">MEGA</h1>
+          <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-4">Catalog</p>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[0.9] mb-4">Ball Cap Studio</h1>
           <p className="text-sm text-white/40 max-w-xl leading-relaxed">
-            White hat + black text is the lead default. Black hat + white text is the core dark edition.
-            Whiteout and Blackout are special editions at $80.
+            Launch product is a baseball cap. White + black and black + white are standard $50 editions.
+            White-on-white and black-on-black are special $80 editions.
           </p>
         </div>
       </section>
@@ -78,18 +78,18 @@ export default function CollectionPage() {
         <div className="container">
           <div className="flex items-end justify-between mb-8">
             <div>
-              <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">MEGA Editions</p>
+              <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Core Editions</p>
               <h2 className="text-2xl font-bold tracking-tight">4 Core Variations</h2>
             </div>
             <Link to="/designer">
               <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white hover:text-black text-xs tracking-wider">
-                Design Your Own
+                Open Designer
               </Button>
             </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10">
-            {megaEditions.map((hat) => (
+            {coreEditions.map((hat) => (
               <div key={hat.id} className="bg-black">
                 <div className="h-64">
                   <HatScene
@@ -105,7 +105,7 @@ export default function CollectionPage() {
                   />
                 </div>
                 <div className="p-4 border-t border-white/10">
-                  <p className="text-xs tracking-widest uppercase text-white/70 mb-1">{hat.backText || 'MEGA'}</p>
+                  <p className="text-xs tracking-widest uppercase text-white/70 mb-1">{hat.backText || 'Core'}</p>
                   <p className="text-[10px] text-white/40">${getHatPrice(hat).toFixed(2)}</p>
                 </div>
               </div>
@@ -119,11 +119,11 @@ export default function CollectionPage() {
           <div className="flex items-end justify-between mb-8">
             <div>
               <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Country Pride</p>
-              <h2 className="text-2xl font-bold tracking-tight">Ready To Go</h2>
+              <h2 className="text-2xl font-bold tracking-tight">Ready Editions</h2>
             </div>
             <Link to="/designer">
               <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white hover:text-black text-xs tracking-wider">
-                Customize Country Hat
+                Customize In Designer
               </Button>
             </Link>
           </div>
@@ -183,7 +183,7 @@ export default function CollectionPage() {
         <div className="container py-16">
           <h2 className="text-3xl font-bold tracking-tight mb-4">Design Your Own</h2>
           <p className="text-sm text-white/40 mb-8 leading-relaxed max-w-lg">
-            Choose country, flag, font, colors, and text placements directly in the designer.
+            Start with a cap, then add text, flags, decals, and custom textures directly on the 3D model.
           </p>
           <Link to="/designer">
             <Button className="bg-white text-black hover:bg-white/90 text-xs tracking-[0.2em] uppercase px-8 h-10">

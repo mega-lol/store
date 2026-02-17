@@ -16,7 +16,7 @@ export default function Cart() {
         <div className="text-center space-y-4 max-w-md">
           <CheckCircle className="h-16 w-16 text-primary mx-auto" />
           <h1 className="text-3xl font-bold">Order Confirmed!</h1>
-          <p className="text-muted-foreground">Thanks for your order. Your custom hats are being crafted!</p>
+          <p className="text-muted-foreground">Thanks for your order. Your custom items are being prepared.</p>
           <Link to="/"><Button>Back to Home</Button></Link>
         </div>
       </main>
@@ -28,7 +28,7 @@ export default function Cart() {
       <main className="min-h-screen pt-16 flex items-center justify-center px-4">
         <div className="text-center space-y-4">
           <h1 className="text-3xl font-bold">Your Cart is Empty</h1>
-          <p className="text-muted-foreground">Design a custom hat to get started!</p>
+          <p className="text-muted-foreground">Design a custom item to get started.</p>
           <Link to="/designer"><Button>Go to Designer</Button></Link>
         </div>
       </main>
@@ -48,7 +48,7 @@ export default function Cart() {
                 style={{ backgroundColor: item.hat.hatColor }}
               />
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{item.hat.text || 'Custom Hat'}</p>
+                <p className="font-medium truncate">{item.hat.text || 'Custom Item'}</p>
                 <p className="text-xs text-muted-foreground">Size: {item.hat.size} · Font: {item.hat.font}</p>
               </div>
               <div className="flex items-center gap-2">

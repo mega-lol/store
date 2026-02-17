@@ -7,6 +7,7 @@ import { applySiteFont, ensureFontLoaded } from '@/lib/fonts';
 export default function Designer() {
   const [config, setConfig] = useState<HatConfig>({ ...DEFAULT_HAT });
   const [selectedDecalId, setSelectedDecalId] = useState<string | null>(null);
+  const [placementMode, setPlacementMode] = useState(false);
 
   useEffect(() => {
     applySiteFont(config.font);
@@ -25,7 +26,13 @@ export default function Designer() {
     // If a decal was removed, clear selection
     if (selectedDecalId && !newConfig.decals.find(d => d.id === selectedDecalId)) {
       setSelectedDecalId(null);
+      setPlacementMode(false);
     }
+  };
+
+  const handleSelectDecal = (id: string | null) => {
+    setSelectedDecalId(id);
+    if (!id) setPlacementMode(false);
   };
 
   return (
@@ -45,7 +52,9 @@ export default function Designer() {
             decals={config.decals}
             onDecalUpdate={handleDecalUpdate}
             selectedDecalId={selectedDecalId || undefined}
-            onDecalSelect={setSelectedDecalId}
+            onDecalSelect={handleSelectDecal}
+            placementMode={placementMode}
+            onPlacementComplete={() => setPlacementMode(false)}
             className="w-full h-full"
           />
         </div>
@@ -56,7 +65,8 @@ export default function Designer() {
             config={config}
             onChange={handleConfigChange}
             selectedDecalId={selectedDecalId || undefined}
-            onSelectDecal={setSelectedDecalId}
+            onSelectDecal={handleSelectDecal}
+            onStartPlacement={() => setPlacementMode(true)}
           />
         </div>
       </div>

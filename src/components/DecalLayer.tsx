@@ -1,169 +1,129 @@
-import { useRef, useEffect, useMemo, useState } from 'react';
-import { useTexture } from '@react-three/drei';
+import { useEffect, useMemo, useRef } from 'react';
+import { Decal as ProjectedDecal, useTexture } from '@react-three/drei';
+import { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Decal } from '@/types/hat';
-import { PivotControls } from '@react-three/drei';
+import { toFontStack } from '@/lib/fonts';
 
 interface DecalLayerProps {
-    decal: Decal;
-    isSelected?: boolean;
-    onUpdate?: (id: string, updates: Partial<Decal>) => void;
-    onClick?: (e: any) => void;
+  decal: Decal;
+  targetMesh: THREE.Mesh | null;
+  isSelected?: boolean;
+  onClick?: (e: ThreeEvent<PointerEvent>) => void;
 }
 
-function TextDecalTexture({ text, color, font }: { text: string; color: string; font: string }) {
-    const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'));
-    const texture = useMemo(() => new THREE.CanvasTexture(canvasRef.current), []);
+const TRANSPARENT_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+function useTextTexture(text: string, color: string, font: string) {
+  const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'));
+  const texture = useMemo(() => new THREE.CanvasTexture(canvasRef.current), []);
 
-        // High resolution for crisp text
-        canvas.width = 1024;
-        canvas.height = 512;
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.width = 2048;
+    canvas.height = 1024;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Config
-        const fontSize = 100;
-        ctx.font = `bold ${fontSize}px "${font || 'Arial'}"`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = color;
+    const lines = text.split('\n').filter(Boolean);
+    const maxLen = Math.max(...lines.map((line) => line.length), 8);
+    let fontSize = maxLen > 16 ? 150 : maxLen > 10 ? 190 : 240;
 
-        // Draw
-        const lines = text.split('\n');
-        const lineHeight = fontSize * 1.2;
-        const startY = (canvas.height - (lines.length - 1) * lineHeight) / 2;
+    const stack = toFontStack(font);
+    ctx.font = `900 ${fontSize}px ${stack}`;
+    const widest = lines.reduce((best, line) => (line.length > best.length ? line : best), lines[0] || '');
+    const measured = ctx.measureText(widest).width || 1;
 
-        lines.forEach((line, i) => {
-            ctx.fillText(line, canvas.width / 2, startY + i * lineHeight);
-        });
+    if (measured > canvas.width * 0.88) {
+      fontSize = Math.floor((fontSize * canvas.width * 0.88) / measured);
+    }
 
-        texture.needsUpdate = true;
-    }, [text, color, font, texture]);
+    const lineHeight = fontSize * 1.15;
+    const startY = canvas.height * 0.5 - ((lines.length - 1) * lineHeight) / 2;
 
-    return <meshStandardMaterial
-        map={texture}
-        transparent
-        polygonOffset
-        polygonOffsetFactor={-1}
-        depthTest={true}
-        depthWrite={false}
-    />;
+    ctx.font = `900 ${fontSize}px ${stack}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = color || '#ffffff';
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+    ctx.lineWidth = Math.max(4, fontSize * 0.05);
+
+    lines.forEach((line, index) => {
+      const y = startY + index * lineHeight;
+      ctx.strokeText(line, canvas.width * 0.5, y);
+      ctx.fillText(line, canvas.width * 0.5, y);
+    });
+
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.flipY = false;
+    texture.needsUpdate = true;
+  }, [text, color, font, texture]);
+
+  return texture;
 }
 
-export default function DecalLayer({ decal, isSelected, onUpdate, onClick }: DecalLayerProps) {
-    const meshRef = useRef<THREE.Mesh>(null);
-    const [hovered, setHovered] = useState(false);
+export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: DecalLayerProps) {
+  const targetMeshRef = useRef<THREE.Mesh>(null!);
+  const imageTexture = useTexture(decal.type === 'image' && decal.url ? decal.url : TRANSPARENT_PIXEL);
+  const textTexture = useTextTexture(decal.text || '', decal.color || '#ffffff', decal.font || 'Vinegar');
 
-    // Load image texture if applicable
-    const texture = decal.type === 'image' && decal.url ? useTexture(decal.url) : null;
+  useEffect(() => {
+    imageTexture.colorSpace = THREE.SRGBColorSpace;
+    imageTexture.wrapS = THREE.ClampToEdgeWrapping;
+    imageTexture.wrapT = THREE.ClampToEdgeWrapping;
+    imageTexture.needsUpdate = true;
+  }, [imageTexture]);
 
-    const handleDrag = (l: THREE.Matrix4) => {
-        if (!onUpdate) return;
+  const spin = decal.spin ?? decal.rotation?.[2] ?? 0;
+  const decalRotation = useMemo((): [number, number, number] => {
+    const normal = new THREE.Vector3(...(decal.normal || [0, 0, 1]));
+    if (normal.lengthSq() < 1e-8) normal.set(0, 0, 1);
+    normal.normalize();
 
-        const position = new THREE.Vector3();
-        const quaternion = new THREE.Quaternion();
-        const scale = new THREE.Vector3();
-
-        l.decompose(position, quaternion, scale);
-
-        const euler = new THREE.Euler().setFromQuaternion(quaternion);
-
-        onUpdate(decal.id, {
-            position: [position.x, position.y, position.z],
-            rotation: [euler.x, euler.y, euler.z],
-            scale: [scale.x, scale.y, scale.z]
-        });
-    };
-
-    return (
-        <group>
-            {isSelected ? (
-                <PivotControls
-                    anchor={[0, 0, 0]}
-                    depthTest={false}
-                    lineWidth={2}
-                    scale={0.5}
-                    onDrag={handleDrag}
-                    visible={isSelected}
-                >
-                    <mesh
-                        ref={meshRef}
-                        position={new THREE.Vector3(...decal.position)}
-                        rotation={new THREE.Euler(...decal.rotation)}
-                        scale={new THREE.Vector3(...decal.scale)}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onClick?.(e);
-                        }}
-                        onPointerOver={() => setHovered(true)}
-                        onPointerOut={() => setHovered(false)}
-                    >
-                        <planeGeometry args={[1, 1]} />
-                        {decal.type === 'image' && texture ? (
-                            <meshStandardMaterial
-                                map={texture}
-                                transparent
-                                polygonOffset
-                                polygonOffsetFactor={-1}
-                                depthTest={true}
-                                depthWrite={false}
-                            />
-                        ) : decal.type === 'text' && decal.text ? (
-                            <TextDecalTexture text={decal.text} color={decal.color || '#ffffff'} font={decal.font || 'Arial'} />
-                        ) : (
-                            <meshBasicMaterial color="red" wireframe /> // Fallback
-                        )}
-
-                        {/* Selection highlight */}
-                        {(isSelected || hovered) && (
-                            <lineSegments>
-                                <edgesGeometry args={[new THREE.PlaneGeometry(1, 1)]} />
-                                <lineBasicMaterial color={isSelected ? "#ffff00" : "#ffffff"} />
-                            </lineSegments>
-                        )}
-                    </mesh>
-                </PivotControls>
-            ) : (
-                <mesh
-                    ref={meshRef}
-                    position={new THREE.Vector3(...decal.position)}
-                    rotation={new THREE.Euler(...decal.rotation)}
-                    scale={new THREE.Vector3(...decal.scale)}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onClick?.(e);
-                    }}
-                    onPointerOver={() => setHovered(true)}
-                    onPointerOut={() => setHovered(false)}
-                >
-                    <planeGeometry args={[1, 1]} />
-                    {decal.type === 'image' && texture ? (
-                        <meshStandardMaterial
-                            map={texture}
-                            transparent
-                            polygonOffset
-                            polygonOffsetFactor={-1}
-                            depthTest={true}
-                            depthWrite={false}
-                        />
-                    ) : decal.type === 'text' && decal.text ? (
-                        <TextDecalTexture text={decal.text} color={decal.color || '#ffffff'} font={decal.font || 'Arial'} />
-                    ) : (
-                        <meshBasicMaterial color="red" wireframe />
-                    )}
-                    {(hovered) && (
-                        <lineSegments>
-                            <edgesGeometry args={[new THREE.PlaneGeometry(1, 1)]} />
-                            <lineBasicMaterial color="#ffffff" />
-                        </lineSegments>
-                    )}
-                </mesh>
-            )}
-        </group>
+    const basis = new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 0, 1),
+      normal,
     );
+    const spinQ = new THREE.Quaternion().setFromAxisAngle(normal, spin);
+    const finalQ = basis.multiply(spinQ);
+    const euler = new THREE.Euler().setFromQuaternion(finalQ);
+    return [euler.x, euler.y, euler.z];
+  }, [decal.normal, spin]);
+
+  const size = Math.max(0.03, decal.scale?.[0] ?? 0.15);
+  const projectionDepth = Math.max(0.06, size * 1.3);
+  const decalScale: [number, number, number] = [size, size, projectionDepth];
+
+  if (!targetMesh) return null;
+  targetMeshRef.current = targetMesh;
+
+  return (
+    <ProjectedDecal
+      mesh={targetMeshRef}
+      position={decal.position}
+      rotation={decalRotation}
+      scale={decalScale}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        onClick?.(e);
+      }}
+    >
+      <meshStandardMaterial
+        map={decal.type === 'image' ? imageTexture : textTexture}
+        transparent
+        alphaTest={0.06}
+        depthTest
+        depthWrite={false}
+        polygonOffset
+        polygonOffsetFactor={isSelected ? -3 : -2}
+        polygonOffsetUnits={isSelected ? -3 : -2}
+        roughness={0.6}
+        metalness={0.02}
+        emissive={isSelected ? '#1f1f1f' : '#000000'}
+        emissiveIntensity={isSelected ? 0.3 : 0}
+      />
+    </ProjectedDecal>
+  );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
@@ -15,17 +15,24 @@ interface CustomizationPanelProps {
   onChange: (config: HatConfig) => void;
   selectedDecalId?: string;
   onSelectDecal?: (id: string | null) => void;
+  onStartPlacement?: () => void;
 }
 
 const SIZES = ['S', 'M', 'L', 'XL'] as const;
 const FLAG_NONE = 'NONE';
 
-export default function CustomizationPanel({ config, onChange, selectedDecalId, onSelectDecal }: CustomizationPanelProps) {
+export default function CustomizationPanel({
+  config,
+  onChange,
+  selectedDecalId,
+  onSelectDecal,
+  onStartPlacement,
+}: CustomizationPanelProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
   const [googleFontName, setGoogleFontName] = useState('');
   const [canvasBaseUrl, setCanvasBaseUrl] = useState<string | null>(null);
-  const [canvasTopText, setCanvasTopText] = useState('MEGA');
+  const [canvasTopText, setCanvasTopText] = useState('YOUR BRAND');
   const [canvasBottomText, setCanvasBottomText] = useState('');
   const [canvasTextColor, setCanvasTextColor] = useState('#ffffff');
   const [canvasFontSize, setCanvasFontSize] = useState(88);
@@ -65,7 +72,7 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
     update({ flagCode: value === FLAG_NONE ? undefined : value });
   };
 
-  const redrawCanvasPreview = () => {
+  const redrawCanvasPreview = useCallback(() => {
     const canvas = canvasPreviewRef.current;
     if (!canvas) return;
 
@@ -114,10 +121,6 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
       ctx.strokeText(line, w / 2, y);
       ctx.fillText(line, w / 2, y);
     });
-  };
-
-  useEffect(() => {
-    redrawCanvasPreview();
   }, [
     config.font,
     canvasTopText,
@@ -132,6 +135,10 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
   ]);
 
   useEffect(() => {
+    redrawCanvasPreview();
+  }, [redrawCanvasPreview]);
+
+  useEffect(() => {
     if (!canvasBaseUrl) {
       canvasImageRef.current = null;
       redrawCanvasPreview();
@@ -144,7 +151,7 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
       canvasImageRef.current = img;
       redrawCanvasPreview();
     };
-  }, [canvasBaseUrl]);
+  }, [canvasBaseUrl, redrawCanvasPreview]);
 
   const handleCanvasBaseUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -163,30 +170,33 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
       position: [0, 0.45, 0.84],
       rotation: [0, 0, 0],
       scale: [0.2, 0.2, 0.2],
+      normal: [0, 0, 1],
+      spin: 0,
     };
 
     update({ decals: [...config.decals, newDecal] });
     onSelectDecal?.(newDecal.id);
-    toast({ title: 'Canvas Added', description: 'Canvas design added as a decal layer.' });
+    onStartPlacement?.();
+    toast({ title: 'Layer Added', description: 'Click on the model to place this layer.' });
   };
 
   const useCanvasAsTexture = () => {
     const canvas = canvasPreviewRef.current;
     if (!canvas) return;
     update({ texture: canvas.toDataURL('image/png') });
-    toast({ title: 'Texture Applied', description: 'Canvas design is now your hat texture.' });
+    toast({ title: 'Texture Applied', description: 'Canvas design is now your product texture.' });
   };
 
   const handleAddToCart = () => {
     addItem(config);
-    toast({ title: 'Added to cart', description: 'Your custom hat has been added.' });
+    toast({ title: 'Added to cart', description: 'Your custom product has been added.' });
   };
 
   const handleShare = async () => {
     const t = config.text.replace(/\n/g, ' ');
     const shareData = {
-      title: 'MEGA — Make Earth Great Again',
-      text: `Check out my custom MEGA hat: "${t}"`,
+      title: '3D Clothing Designer',
+      text: `Check out my custom design: "${t}"`,
       url: window.location.href,
     };
     try {
@@ -213,9 +223,11 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
     const newDecal: Decal = {
       id: uuidv4(),
       type,
-      position: [0, 0.5, 0.8], // Default position on front/top
+      position: [0, 0.5, 0.8],
       rotation: [0, 0, 0],
       scale: [0.15, 0.15, 0.15],
+      normal: [0, 0, 1],
+      spin: 0,
       text: type === 'text' ? 'New Text' : undefined,
       color: type === 'text' ? '#ffffff' : undefined,
       font: type === 'text' ? config.font : undefined,
@@ -233,12 +245,14 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
           newDecal.url = URL.createObjectURL(file);
           update({ decals: [...config.decals, newDecal] });
           onSelectDecal?.(newDecal.id);
+          onStartPlacement?.();
         }
       };
       input.click();
     } else {
       update({ decals: [...config.decals, newDecal] });
       onSelectDecal?.(newDecal.id);
+      onStartPlacement?.();
     }
   };
 
@@ -258,7 +272,8 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
   return (
     <div className="flex flex-col h-full">
       <div className="p-5 pb-0">
-        <h2 className="text-lg font-bold tracking-tight text-white mb-4">Design Your Hat</h2>
+        <h2 className="text-lg font-bold tracking-tight text-white mb-2">Design Studio</h2>
+        <p className="text-[10px] uppercase tracking-[0.15em] text-white/40">Product: Ball Cap (initial)</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 pt-0 space-y-6">
@@ -272,7 +287,7 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
 
           <TabsContent value="base" className="space-y-5">
             <ColorPicker
-              label="Hat Color"
+              label="Cap Color"
               value={config.hatColor}
               onChange={hatColor => update({ hatColor, texture: undefined })} // Clear texture if color selected
               presets={PRESET_HAT_COLORS}
@@ -292,13 +307,13 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
                   onClick={() => setEdition('#FFFFFF', '#000000')}
                   className="h-8 text-[10px] border border-white/20 text-white/80 hover:border-white/50"
                 >
-                  White Hat
+                  White Base
                 </button>
                 <button
                   onClick={() => setEdition('#000000', '#FFFFFF')}
                   className="h-8 text-[10px] border border-white/20 text-white/80 hover:border-white/50"
                 >
-                  Black Hat
+                  Black Base
                 </button>
                 <button
                   onClick={() => setEdition('#FFFFFF', '#FFFFFF')}
@@ -343,7 +358,7 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
                 className="hidden"
                 onChange={handleTextureUpload}
               />
-              <p className="text-[10px] text-white/30">Upload an image to wrap around the hat.</p>
+              <p className="text-[10px] text-white/30">Upload an image to wrap around the base surface.</p>
             </div>
 
             <div className="space-y-1.5 pt-4">
@@ -424,7 +439,7 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
               <textarea
                 value={config.text}
                 onChange={e => update({ text: e.target.value })}
-                placeholder={'MAKE EARTH\nGREAT AGAIN'}
+                placeholder={'YOUR\nDESIGN'}
                 maxLength={50}
                 rows={2}
                 className="w-full text-xs bg-transparent border border-white/10 text-white placeholder:text-white/20 px-2 py-1.5 resize-none focus:outline-none focus:border-white/30"
@@ -684,18 +699,26 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
                 <div className="space-y-2">
                   <label className="text-[10px] text-white/40 uppercase">Rotation</label>
                   <Slider
-                    defaultValue={[selectedDecal.rotation[2]]}
+                    defaultValue={[selectedDecal.spin ?? selectedDecal.rotation[2] ?? 0]}
                     min={-Math.PI}
                     max={Math.PI}
                     step={0.1}
-                    value={[selectedDecal.rotation[2]]}
-                    onValueChange={([val]) => updateDecal(selectedDecal.id, { rotation: [selectedDecal.rotation[0], selectedDecal.rotation[1], val] })}
+                    value={[selectedDecal.spin ?? selectedDecal.rotation[2] ?? 0]}
+                    onValueChange={([val]) => updateDecal(selectedDecal.id, { spin: val })}
                   />
                 </div>
 
+                <Button
+                  variant="outline"
+                  className="w-full h-8 text-[10px] border-white/20 text-white/70"
+                  onClick={() => onStartPlacement?.()}
+                >
+                  Place On Model
+                </Button>
+
                 <p className="text-[10px] text-white/30 italic mt-2">
                   <Move className="inline h-3 w-3 mr-1" />
-                  Drag the gizmo on the hat to position
+                  Click and drag on the model surface to reposition
                 </p>
               </div>
             )}
