@@ -124,9 +124,9 @@ export default function CollectionPage() {
         <div className="container">
           <div className="flex items-end justify-between mb-8">
             <div>
-              <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Country Pride</p>
-              <h2 className="text-2xl font-bold tracking-tight">UN Editions</h2>
-              <p className="text-xs text-white/40 mt-2">Built for fans of each country with matching national colors.</p>
+              <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Celebrate Every Culture</p>
+              <h2 className="text-2xl font-bold tracking-tight">World Editions</h2>
+              <p className="text-xs text-white/40 mt-2">Rep your heritage, celebrate your roots — matching colors for every flag on Earth.</p>
             </div>
             <Link to="/designer">
               <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white hover:text-black text-xs tracking-wider">

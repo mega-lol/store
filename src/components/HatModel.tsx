@@ -2,9 +2,12 @@ import { useRef, useMemo, useEffect } from 'react';
 import { useFrame, useThree, useLoader, ThreeEvent } from '@react-three/fiber';
 import { useGLTF, Decal as ProjectedDecal } from '@react-three/drei';
 import * as THREE from 'three';
+import { Canvas as FabricCanvas } from 'fabric';
 import { Decal as HatDecal, TextStyle } from '@/types/hat';
 import { toFontStack } from '@/lib/fonts';
 import DecalLayer from './DecalLayer';
+import FabricTextureLayer from './FabricTextureLayer';
+import useUvPointerBridge from '@/hooks/useUvPointerBridge';
 
 interface HatModelProps {
   hatColor: string;
@@ -23,6 +26,8 @@ interface HatModelProps {
   placementMode?: boolean;
   onPlacementComplete?: () => void;
   autoRotate?: boolean;
+  fabricCanvas?: FabricCanvas | null;
+  onEditingSurface?: (editing: boolean) => void;
 }
 
 const MODEL_PATH = `${import.meta.env.BASE_URL}models/baseball_cap.glb`;
@@ -37,7 +42,6 @@ function drawEmbroideryStitch(
   fontSize: number,
   color: string,
 ) {
-  // Simulate embroidery thread with multiple offset passes
   const offsets = [
     { dx: 0, dy: -1.5, alpha: 0.3 },
     { dx: -1, dy: -1, alpha: 0.2 },
@@ -62,30 +66,26 @@ function drawGoldEmbroidery(
   y: number,
   fontSize: number,
 ) {
-  // Vivid saturated gold gradient
   const goldGrad = ctx.createLinearGradient(0, y - fontSize * 0.6, 0, y + fontSize * 0.6);
-  goldGrad.addColorStop(0, '#FFE850');    // Bright yellow highlight
-  goldGrad.addColorStop(0.15, '#FFD000'); // Vivid gold
-  goldGrad.addColorStop(0.35, '#E8A000'); // Deep rich gold
-  goldGrad.addColorStop(0.5, '#FFD000');  // Vivid gold center
-  goldGrad.addColorStop(0.65, '#CC8800'); // Warm amber
-  goldGrad.addColorStop(0.85, '#FFD000'); // Vivid gold
-  goldGrad.addColorStop(1, '#FFE850');    // Bright yellow bottom
+  goldGrad.addColorStop(0, '#FFE850');
+  goldGrad.addColorStop(0.15, '#FFD000');
+  goldGrad.addColorStop(0.35, '#E8A000');
+  goldGrad.addColorStop(0.5, '#FFD000');
+  goldGrad.addColorStop(0.65, '#CC8800');
+  goldGrad.addColorStop(0.85, '#FFD000');
+  goldGrad.addColorStop(1, '#FFE850');
 
-  // Embossed: deep shadow layers for raised 3D look
   for (let i = 5; i >= 1; i--) {
     ctx.globalAlpha = 0.3 + (5 - i) * 0.06;
     ctx.fillStyle = '#1A0E00';
     ctx.fillText(text, x + i * 0.5, y + i * 1.4);
   }
 
-  // Side emboss depth
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = '#3D2200';
   ctx.fillText(text, x + 1.5, y + fontSize * 0.05);
   ctx.fillText(text, x + 1, y + fontSize * 0.07);
 
-  // Thread texture: tight stitch simulation
   ctx.globalAlpha = 0.1;
   ctx.fillStyle = '#000000';
   for (let sdy = -2; sdy <= 2; sdy += 2) {
@@ -95,23 +95,19 @@ function drawGoldEmbroidery(
     }
   }
 
-  // Main gold fill — full opacity, double-stamped for richness
   ctx.globalAlpha = 1;
   ctx.fillStyle = goldGrad;
   ctx.fillText(text, x, y);
   ctx.fillText(text, x, y);
 
-  // Saturated yellow overlay for pop
   ctx.globalAlpha = 0.5;
   ctx.fillStyle = '#FFD700';
   ctx.fillText(text, x, y);
 
-  // Top-edge highlight for embossed bevel
   ctx.globalAlpha = 0.55;
   ctx.fillStyle = '#FFF8C0';
   ctx.fillText(text, x, y - fontSize * 0.025);
 
-  // Bright metallic shine band across center
   ctx.save();
   ctx.globalAlpha = 0.3;
   const shineGrad = ctx.createLinearGradient(0, y - fontSize * 0.2, 0, y + fontSize * 0.1);
@@ -123,7 +119,6 @@ function drawGoldEmbroidery(
   ctx.fillText(text, x, y);
   ctx.restore();
 
-  // Crisp dark-gold outline for definition
   ctx.globalAlpha = 0.8;
   ctx.strokeStyle = '#9B7018';
   ctx.lineWidth = Math.max(2.5, fontSize * 0.018);
@@ -140,26 +135,22 @@ function draw3DPuff(
   fontSize: number,
   color: string,
 ) {
-  // Deep shadow for 3D raised look
   for (let i = 6; i >= 1; i--) {
     ctx.globalAlpha = 0.15 + (6 - i) * 0.05;
     ctx.fillStyle = '#000000';
     ctx.fillText(text, x, y + i * 1.5);
   }
 
-  // Side depth
   ctx.globalAlpha = 0.3;
   ctx.fillStyle = '#222222';
   for (let i = 3; i >= 1; i--) {
     ctx.fillText(text, x + i * 0.5, y + i * 1.2);
   }
 
-  // Main color
   ctx.globalAlpha = 1;
   ctx.fillStyle = color;
   ctx.fillText(text, x, y);
 
-  // Top highlight
   ctx.globalAlpha = 0.35;
   ctx.fillStyle = '#ffffff';
   ctx.fillText(text, x, y - fontSize * 0.02);
@@ -178,7 +169,6 @@ function makeTextTexture(
   c.height = 1024;
   const ctx = c.getContext('2d')!;
   ctx.clearRect(0, 0, c.width, c.height);
-
 
   const x = c.width * 0.5;
   const lineCount = lines.length;
@@ -202,7 +192,6 @@ function makeTextTexture(
           : 210;
 
   const fontStack = toFontStack(fontFamily);
-
   const fontStr = `900 ${fontSize}px ${fontStack}`;
   ctx.font = fontStr;
 
@@ -230,7 +219,6 @@ function makeTextTexture(
     } else if (textStyle === 'puff-3d') {
       draw3DPuff(ctx, t, x, y, fontSize, textColor);
     } else {
-      // flat style (original)
       ctx.fillStyle = textColor;
       ctx.strokeStyle = textColor.toLowerCase() === '#ffffff' || textColor.toLowerCase() === '#fff'
         ? 'rgba(0,0,0,0.35)'
@@ -274,6 +262,8 @@ export default function HatModel({
   placementMode = false,
   onPlacementComplete,
   autoRotate = false,
+  fabricCanvas,
+  onEditingSurface,
 }: HatModelProps) {
   const groupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
@@ -282,6 +272,7 @@ export default function HatModel({
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF(MODEL_PATH);
 
+  const useFabricTexture = Boolean(fabricCanvas);
   const hasCustomTexture = Boolean(texture);
   const hatTexture = useLoader(THREE.TextureLoader, texture || TRANSPARENT_PIXEL);
   if (hasCustomTexture) {
@@ -417,12 +408,15 @@ export default function HatModel({
     return maxDim > 0 ? 1.6 / maxDim : 1;
   }, [size]);
 
+  // Front text projected decal - only when NOT using Fabric
   const frontTexture = useMemo(() => {
+    if (useFabricTexture) return null;
     const lines = (text || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
     return makeTextTexture(lines, textColor, gl, fontFamily, textStyle);
-  }, [text, textColor, gl, fontFamily, textStyle]);
+  }, [text, textColor, gl, fontFamily, textStyle, useFabricTexture]);
 
+  // Back text still uses projected decal
   const backTexture = useMemo(() => {
     const lines = (backText || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
@@ -451,7 +445,15 @@ export default function HatModel({
           mat.name = materialName;
 
           const isBand = mesh.parent?.name === 'innerLiner';
-          mat.color.set(isBand ? (bandColor || hatColor) : hatColor);
+          const isMainCap = mesh.parent?.name === 'mainCap' || mesh === mainCapMesh;
+
+          // When Fabric texture is active on mainCap, don't set hat color -
+          // the Fabric canvas background provides it
+          if (useFabricTexture && isMainCap && !isBand) {
+            mat.color.set('#ffffff');
+          } else {
+            mat.color.set(isBand ? (bandColor || hatColor) : hatColor);
+          }
 
           if (hasCustomTexture && !isBand) {
             mat.map = hatTexture;
@@ -482,7 +484,13 @@ export default function HatModel({
         mesh.material = remat(mesh.material);
       }
     });
-  }, [capMesh, hatColor, bandColor, hatTexture, hasCustomTexture]);
+  }, [capMesh, hatColor, bandColor, hatTexture, hasCustomTexture, useFabricTexture, mainCapMesh]);
+
+  // UV pointer bridge for Fabric interaction
+  const uvBridge = useUvPointerBridge({
+    fabricCanvas: fabricCanvas || null,
+    onFabricHit: onEditingSurface,
+  });
 
   const getTargetMesh = (decal: HatDecal): THREE.Mesh | null => {
     if (decal.targetMeshName) {
@@ -520,6 +528,12 @@ export default function HatModel({
   };
 
   const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
+    // Try Fabric UV bridge first
+    if (useFabricTexture && event.uv) {
+      uvBridge.onPointerDown(event);
+      if (event.stopped) return;
+    }
+
     if (!selectedDecalId || !onDecalUpdate) return;
     if (!placementMode) return;
     if (event.button !== 0) return;
@@ -533,8 +547,20 @@ export default function HatModel({
     onPlacementComplete?.();
   };
 
-  const textY = mcCenter.y + mcSize.y * 0.12;
-  const frontTextPos: [number, number, number] = [mcCenter.x, textY, mcFrontZ + mcSize.z * 0.008];
+  const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
+    if (useFabricTexture) {
+      uvBridge.onPointerMove(event);
+    }
+  };
+
+  const handlePointerUp = (event: ThreeEvent<PointerEvent>) => {
+    if (useFabricTexture) {
+      uvBridge.onPointerUp(event);
+    }
+  };
+
+  const textY = mcCenter.y + mcSize.y * 0.08;
+  const frontTextPos: [number, number, number] = [mcCenter.x, textY, mcFrontZ + mcSize.z * 0.012];
   const backTextPos: [number, number, number] = [mcCenter.x, textY - mcSize.y * 0.03, mcBackZ - mcSize.z * 0.008];
   const rightFlagPos: [number, number, number] = [
     mcCenter.x + mcSize.x * 0.29,
@@ -542,7 +568,7 @@ export default function HatModel({
     mcCenter.z + mcSize.z * 0.04,
   ];
 
-  const frontTextScale: [number, number, number] = [mcSize.x * 0.74, mcSize.y * 0.40, Math.max(mcSize.z * 0.46, 0.09)];
+  const frontTextScale: [number, number, number] = [mcSize.x * 0.58, mcSize.y * 0.34, Math.max(mcSize.z * 0.46, 0.09)];
   const backTextScale: [number, number, number] = [mcSize.x * 0.48, mcSize.y * 0.26, Math.max(mcSize.z * 0.34, 0.07)];
   const flagScale: [number, number, number] = [mcSize.x * 0.22, mcSize.y * 0.14, Math.max(mcSize.z * 0.25, 0.06)];
 
@@ -552,8 +578,18 @@ export default function HatModel({
         <primitive
           object={capMesh}
           onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
           onPointerMissed={() => onDecalSelect?.(null)}
         />
+
+        {/* Fabric.js texture layer - applied to mainCap mesh */}
+        {useFabricTexture && mainCapMesh && (
+          <FabricTextureLayer
+            fabricCanvas={fabricCanvas!}
+            targetMesh={mainCapMesh}
+          />
+        )}
 
         {decals.map((decal) => (
           <DecalLayer
@@ -567,8 +603,9 @@ export default function HatModel({
           />
         ))}
 
-        {mainCapDecalTarget && frontTexture && (
-          <ProjectedDecal mesh={mainCapDecalTargetRef} position={frontTextPos} rotation={[-0.08, 0, 0]} scale={frontTextScale}>
+        {/* Front text - only when NOT using Fabric texture */}
+        {!useFabricTexture && mainCapDecalTarget && frontTexture && (
+          <ProjectedDecal mesh={mainCapDecalTargetRef} position={frontTextPos} rotation={[-0.12, 0, 0]} scale={frontTextScale}>
             <meshStandardMaterial
               map={frontTexture}
               transparent
@@ -586,6 +623,7 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
+        {/* Back text - always projected decal */}
         {mainCapDecalTarget && backTexture && (
           <ProjectedDecal
             mesh={mainCapDecalTargetRef}
@@ -610,6 +648,7 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
+        {/* Flag - always projected decal */}
         {mainCapDecalTarget && flagCode && (
           <ProjectedDecal mesh={mainCapDecalTargetRef} position={rightFlagPos} rotation={[0, Math.PI * 0.5, 0]} scale={flagScale}>
             <meshStandardMaterial

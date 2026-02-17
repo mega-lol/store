@@ -4,11 +4,17 @@ import CustomizationPanel from '@/components/CustomizationPanel';
 import { DEFAULT_HAT, HatConfig, Decal } from '@/types/hat';
 import { applySiteFont, ensureFontLoaded } from '@/lib/fonts';
 import { decodeDesign } from '@/lib/designShare';
+import useFabricCanvas from '@/hooks/useFabricCanvas';
+import { toFontStack } from '@/lib/fonts';
 
 export default function Designer() {
   const [config, setConfig] = useState<HatConfig>({ ...DEFAULT_HAT });
   const [selectedDecalId, setSelectedDecalId] = useState<string | null>(null);
   const [placementMode, setPlacementMode] = useState(false);
+  const [editingOnSurface, setEditingOnSurface] = useState(false);
+
+  // Fabric.js canvas for direct text manipulation on 3D surface
+  const fabric = useFabricCanvas(config.hatColor);
 
   useEffect(() => {
     const encoded = new URLSearchParams(window.location.search).get('d');
@@ -29,6 +35,15 @@ export default function Designer() {
     void ensureFontLoaded(config.font);
   }, [config.font]);
 
+  // Sync config text/color/font/style to Fabric canvas
+  useEffect(() => {
+    fabric.setText(config.text, {
+      fill: config.textColor,
+      fontFamily: toFontStack(config.font),
+      textStyle: config.textStyle,
+    });
+  }, [config.text, config.textColor, config.font, config.textStyle, fabric.setText]);
+
   const handleDecalUpdate = (id: string, updates: Partial<Decal>) => {
     setConfig(prev => ({
       ...prev,
@@ -38,7 +53,6 @@ export default function Designer() {
 
   const handleConfigChange = (newConfig: HatConfig) => {
     setConfig(newConfig);
-    // If a decal was removed, clear selection
     if (selectedDecalId && !newConfig.decals.find(d => d.id === selectedDecalId)) {
       setSelectedDecalId(null);
       setPlacementMode(false);
@@ -71,6 +85,9 @@ export default function Designer() {
             onDecalSelect={handleSelectDecal}
             placementMode={placementMode}
             onPlacementComplete={() => setPlacementMode(false)}
+            fabricCanvas={fabric.canvas}
+            editingOnSurface={editingOnSurface}
+            onEditingSurface={setEditingOnSurface}
             className="w-full h-full"
           />
         </div>

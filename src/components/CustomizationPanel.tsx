@@ -385,10 +385,7 @@ export default function CustomizationPanel({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-5 pb-0">
-        <h2 className="text-lg font-bold tracking-tight text-white mb-2">MEGA Designer</h2>
-        <p className="text-[10px] uppercase tracking-[0.15em] text-white/40">Product: Ball Cap (initial)</p>
-      </div>
+      <div className="p-5 pb-0" />
 
       <div className="flex-1 overflow-y-auto p-5 pt-0 space-y-6">
         <Tabs defaultValue="base" className="w-full">

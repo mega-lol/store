@@ -3,6 +3,13 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Menu, X, Search } from 'lucide-react';
 import { useCart } from '@/store/cartStore';
 
+const GLOBE_MENU_ITEMS = [
+  { label: 'About', href: '#movement' },
+  { label: 'Brand', href: 'mailto:brand@megamovement.org' },
+  { label: 'Press', href: 'mailto:press@megamovement.org' },
+  { label: 'Support', href: 'mailto:support@megamovement.org' },
+];
+
 const NAV_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/collection', label: 'Shop' },
@@ -17,7 +24,7 @@ const SEARCH_ITEMS = [
   { label: 'Cart', to: '/cart', keywords: 'cart checkout buy order' },
   { label: 'Pre-order Hat', to: '/designer', keywords: 'preorder pre-order buy hat purchase' },
   { label: 'MEGA Gold Hat', to: '/collection', keywords: 'mega gold white hat classic' },
-  { label: 'Country Editions', to: '/collection', keywords: 'country flag nation edition pride' },
+  { label: 'World Editions', to: '/collection', keywords: 'country flag world culture edition heritage' },
 ];
 
 export default function Navbar() {
@@ -32,7 +39,22 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchIndex, setSearchIndex] = useState(0);
+  const [globeMenuOpen, setGlobeMenuOpen] = useState(false);
+  const [globeMenuPos, setGlobeMenuPos] = useState({ x: 0, y: 0 });
+  const globeMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Close globe menu on outside click
+  useEffect(() => {
+    if (!globeMenuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (globeMenuRef.current && !globeMenuRef.current.contains(e.target as Node)) {
+        setGlobeMenuOpen(false);
+      }
+    };
+    window.addEventListener('click', onClick);
+    return () => window.removeEventListener('click', onClick);
+  }, [globeMenuOpen]);
 
   // Show navbar on scroll (home only hides it at top)
   useEffect(() => {
@@ -134,11 +156,15 @@ export default function Navbar() {
             {/* Logo */}
             <Link
               to="/"
-              className={`text-sm font-bold tracking-[0.25em] uppercase transition-colors ${
-                dark ? 'text-white/90 hover:text-white' : 'text-black/80 hover:text-black'
-              }`}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setGlobeMenuPos({ x: e.clientX, y: e.clientY });
+                setGlobeMenuOpen(true);
+              }}
+              className="text-2xl leading-none select-none transition-transform hover:scale-110"
+              title="Make Earth Great Again"
             >
-              MEGA
+              🌎
             </Link>
 
             {/* Desktop links */}
@@ -285,6 +311,26 @@ export default function Navbar() {
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ─── GLOBE CONTEXT MENU ─── */}
+      {globeMenuOpen && (
+        <div
+          ref={globeMenuRef}
+          className="fixed z-[70] min-w-[140px] rounded-xl border bg-white/95 backdrop-blur-xl shadow-2xl py-1.5 overflow-hidden"
+          style={{ left: globeMenuPos.x, top: globeMenuPos.y }}
+        >
+          {GLOBE_MENU_ITEMS.map((item) => (
+            <a
+              key={item.label}
+              href={item.href}
+              onClick={() => setGlobeMenuOpen(false)}
+              className="block px-4 py-2 text-xs tracking-[0.1em] text-black/70 hover:bg-black/5 hover:text-black transition-colors"
+            >
+              {item.label}
+            </a>
+          ))}
         </div>
       )}
 

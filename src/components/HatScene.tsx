@@ -1,5 +1,6 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Environment } from '@react-three/drei';
+import { Canvas as FabricCanvas } from 'fabric';
 import HatModel from './HatModel';
 import { Suspense } from 'react';
 import * as THREE from 'three';
@@ -24,6 +25,9 @@ interface HatSceneProps {
   onPlacementComplete?: () => void;
   autoRotate?: boolean;
   className?: string;
+  fabricCanvas?: FabricCanvas | null;
+  editingOnSurface?: boolean;
+  onEditingSurface?: (editing: boolean) => void;
 }
 
 function Lights() {
@@ -61,6 +65,9 @@ export default function HatScene({
   onPlacementComplete,
   autoRotate = false,
   className,
+  fabricCanvas,
+  editingOnSurface = false,
+  onEditingSurface,
 }: HatSceneProps) {
   return (
     <div className={`relative ${className || ''}`}>
@@ -97,6 +104,8 @@ export default function HatScene({
             placementMode={placementMode}
             onPlacementComplete={onPlacementComplete}
             autoRotate={autoRotate}
+            fabricCanvas={fabricCanvas}
+            onEditingSurface={onEditingSurface}
           />
           <ContactShadows
             position={[0, -0.52, 0]}
@@ -107,7 +116,7 @@ export default function HatScene({
           />
           <OrbitControls
             target={[0, 0.08, 0]}
-            enabled={!placementMode}
+            enabled={!placementMode && !editingOnSurface}
             enablePan={false}
             enableZoom={!autoRotate}
             minDistance={1.8}
@@ -123,6 +132,11 @@ export default function HatScene({
       {placementMode && (
         <div className="absolute left-4 bottom-4 z-10 rounded border border-white/20 bg-black/70 px-3 py-2 text-[10px] tracking-wide uppercase text-white/80">
           Placement mode: click surface to stamp layer
+        </div>
+      )}
+      {editingOnSurface && (
+        <div className="absolute left-4 bottom-4 z-10 rounded border border-yellow-400/30 bg-black/70 px-3 py-2 text-[10px] tracking-wide uppercase text-yellow-300/80">
+          Editing text on surface — drag to move, handles to resize
         </div>
       )}
     </div>
