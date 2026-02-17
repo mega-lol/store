@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import ColorPicker from './ColorPicker';
-import { HatConfig, PRESET_HAT_COLORS, PRESET_TEXT_COLORS, Decal, COUNTRY_CODES, FONTS } from '@/types/hat';
+import { HatConfig, PRESET_HAT_COLORS, PRESET_TEXT_COLORS, Decal, COUNTRY_CODES, FONTS, DEFAULT_HAT } from '@/types/hat';
 import { useCart } from '@/store/cartStore';
 import { ShoppingCart, Share2, Plus, Trash2, Upload, Image as ImageIcon, Type, RotateCw, Move } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { applySiteFont, ensureFontLoaded, toFontStack } from '@/lib/fonts';
 import { v4 as uuidv4 } from 'uuid';
+import { buildShareUrl } from '@/lib/designShare';
 
 interface CustomizationPanelProps {
   config: HatConfig;
@@ -20,6 +21,14 @@ interface CustomizationPanelProps {
 
 const SIZES = ['S', 'M', 'L', 'XL'] as const;
 const FLAG_NONE = 'NONE';
+const SAVED_DESIGNS_KEY = 'mega_saved_designs_v1';
+
+function countryFlagEmoji(code: string): string {
+  const up = code.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(up)) return '';
+  return String.fromCodePoint(0x1f1e6 + up.charCodeAt(0) - 65) +
+    String.fromCodePoint(0x1f1e6 + up.charCodeAt(1) - 65);
+}
 
 export default function CustomizationPanel({
   config,
@@ -192,12 +201,38 @@ export default function CustomizationPanel({
     toast({ title: 'Added to cart', description: 'Your custom product has been added.' });
   };
 
+  const handleMintNew = () => {
+    onChange({
+      ...DEFAULT_HAT,
+      id: crypto.randomUUID(),
+      font: config.font,
+    });
+    onSelectDecal?.(null);
+    toast({ title: 'New Hat Minted', description: 'Fresh MEGA hat ready to design.' });
+  };
+
+  const handleSaveDesign = () => {
+    try {
+      const id = config.id || crypto.randomUUID();
+      const nextConfig = { ...config, id };
+      const existing = localStorage.getItem(SAVED_DESIGNS_KEY);
+      const parsed = existing ? (JSON.parse(existing) as HatConfig[]) : [];
+      const merged = [nextConfig, ...parsed.filter((design) => design.id !== id)].slice(0, 100);
+      localStorage.setItem(SAVED_DESIGNS_KEY, JSON.stringify(merged));
+      update({ id });
+      toast({ title: 'Design Saved', description: 'Saved locally for quick relaunch.' });
+    } catch {
+      toast({ title: 'Save Failed', description: 'Unable to save this design locally.' });
+    }
+  };
+
   const handleShare = async () => {
     const t = config.text.replace(/\n/g, ' ');
+    const shareUrl = buildShareUrl(config);
     const shareData = {
-      title: '3D Clothing Designer',
+      title: 'MEGA Hats',
       text: `Check out my custom design: "${t}"`,
-      url: window.location.href,
+      url: shareUrl,
     };
     try {
       if (navigator.share) {
@@ -272,7 +307,7 @@ export default function CustomizationPanel({
   return (
     <div className="flex flex-col h-full">
       <div className="p-5 pb-0">
-        <h2 className="text-lg font-bold tracking-tight text-white mb-2">Design Studio</h2>
+        <h2 className="text-lg font-bold tracking-tight text-white mb-2">MEGA Designer</h2>
         <p className="text-[10px] uppercase tracking-[0.15em] text-white/40">Product: Ball Cap (initial)</p>
       </div>
 
@@ -428,7 +463,7 @@ export default function CustomizationPanel({
                 <option value={FLAG_NONE} className="bg-black text-white">None</option>
                 {COUNTRY_CODES.map((country) => (
                   <option key={country.code} value={country.code} className="bg-black text-white">
-                    {country.name}
+                    {countryFlagEmoji(country.code)} {country.name}
                   </option>
                 ))}
               </select>
@@ -727,6 +762,22 @@ export default function CustomizationPanel({
       </div>
 
       <div className="pt-4 border-t border-white/5 space-y-2 p-5 bg-black">
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <Button
+            variant="outline"
+            className="h-8 border-white/20 text-white/80 hover:text-white text-[10px] tracking-[0.1em] uppercase"
+            onClick={handleMintNew}
+          >
+            Mint New Hat
+          </Button>
+          <Button
+            variant="outline"
+            className="h-8 border-white/20 text-white/80 hover:text-white text-[10px] tracking-[0.1em] uppercase"
+            onClick={handleSaveDesign}
+          >
+            Save Design
+          </Button>
+        </div>
         <div className="flex items-center justify-between mb-3">
           <span className="text-[10px] tracking-[0.2em] uppercase text-white/30">Pre-order</span>
           <span className="text-xl font-bold text-white">$50</span>

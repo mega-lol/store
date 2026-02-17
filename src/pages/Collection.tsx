@@ -66,7 +66,7 @@ export default function CollectionPage() {
       <section className="border-b border-white/10">
         <div className="container py-16">
           <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-4">Catalog</p>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[0.9] mb-4">Ball Cap Studio</h1>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[0.9] mb-4">MEGA</h1>
           <p className="text-sm text-white/40 max-w-xl leading-relaxed">
             Launch product is a baseball cap. White + black and black + white are standard $50 editions.
             White-on-white and black-on-black are special $80 editions.
@@ -119,7 +119,8 @@ export default function CollectionPage() {
           <div className="flex items-end justify-between mb-8">
             <div>
               <p className="text-[10px] tracking-[0.3em] uppercase text-white/40 mb-2">Country Pride</p>
-              <h2 className="text-2xl font-bold tracking-tight">Ready Editions</h2>
+              <h2 className="text-2xl font-bold tracking-tight">UN Editions</h2>
+              <p className="text-xs text-white/40 mt-2">Built for fans of each country with matching national colors.</p>
             </div>
             <Link to="/designer">
               <Button variant="outline" size="sm" className="border-white/20 text-white hover:bg-white hover:text-black text-xs tracking-wider">
@@ -147,7 +148,7 @@ export default function CollectionPage() {
                 <div className="p-4 border-t border-white/10 flex items-center justify-between">
                   <div>
                     <p className="text-xs tracking-widest uppercase text-white/80">{hat.countryName}</p>
-                    <p className="text-[10px] text-white/40">Default: White + Black</p>
+                    <p className="text-[10px] text-white/40">National colors preset</p>
                   </div>
                   <span className="text-[10px] tracking-[0.2em] text-white/30">{hat.countryCode}</span>
                 </div>

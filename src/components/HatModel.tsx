@@ -47,19 +47,19 @@ function makeTextTexture(
   let fontSize =
     lineCount === 1
       ? maxLen > 15
-        ? 180
+        ? 210
         : maxLen > 10
-          ? 220
-          : 260
+          ? 250
+          : 300
       : lineCount === 2
         ? maxLen > 12
-          ? 160
+          ? 185
           : maxLen > 8
-            ? 200
-            : 240
+            ? 230
+            : 270
         : maxLen > 10
-          ? 140
-          : 180;
+          ? 165
+          : 210;
 
   const fontStack = toFontStack(fontFamily);
 
@@ -79,8 +79,17 @@ function makeTextTexture(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = textColor;
+  ctx.strokeStyle = textColor.toLowerCase() === '#ffffff' || textColor.toLowerCase() === '#fff'
+    ? 'rgba(0,0,0,0.35)'
+    : 'rgba(255,255,255,0.22)';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(6, fontSize * 0.08);
   ctx.font = finalFont;
-  lines.forEach((t, i) => ctx.fillText(t, x, y0 + i * dy));
+  lines.forEach((t, i) => {
+    const y = y0 + i * dy;
+    ctx.strokeText(t, x, y);
+    ctx.fillText(t, x, y);
+  });
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -91,6 +100,10 @@ function makeTextTexture(
   tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   tex.needsUpdate = true;
   return tex;
+}
+
+function meshKey(name?: string, parentName?: string): string {
+  return `${parentName || ''}::${name || ''}`;
 }
 
 export default function HatModel({
@@ -113,6 +126,7 @@ export default function HatModel({
   const groupRef = useRef<THREE.Group>(null);
   const modelRef = useRef<THREE.Group>(null);
   const mainCapMeshRef = useRef<THREE.Mesh>(null!);
+  const mainCapDecalTargetRef = useRef<THREE.Mesh>(null!);
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF(MODEL_PATH);
 
@@ -152,6 +166,43 @@ export default function HatModel({
     return list;
   }, [capMesh]);
 
+  const decalTargetMeshMap = useMemo(() => {
+    const map = new Map<string, THREE.Mesh>();
+
+    for (const mesh of meshList) {
+      const bakedGeometry = mesh.geometry.clone();
+      const localToModel = new THREE.Matrix4();
+      let cursor: THREE.Object3D | null = mesh;
+
+      while (cursor && cursor !== capMesh) {
+        localToModel.premultiply(cursor.matrix);
+        cursor = cursor.parent;
+      }
+
+      bakedGeometry.applyMatrix4(localToModel);
+      bakedGeometry.computeVertexNormals();
+
+      const decalTarget = new THREE.Mesh(bakedGeometry, new THREE.MeshBasicMaterial());
+      decalTarget.name = mesh.name;
+      map.set(meshKey(mesh.name, mesh.parent?.name), decalTarget);
+    }
+
+    return map;
+  }, [meshList, capMesh]);
+
+  useEffect(() => {
+    return () => {
+      for (const mesh of decalTargetMeshMap.values()) {
+        mesh.geometry.dispose();
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach((m) => m.dispose());
+        } else {
+          mesh.material.dispose();
+        }
+      }
+    };
+  }, [decalTargetMeshMap]);
+
   const mainCapMesh = useMemo(() => {
     let target: THREE.Mesh | null = null;
     let fallback: THREE.Mesh | null = null;
@@ -171,6 +222,19 @@ export default function HatModel({
 
   if (mainCapMesh) {
     mainCapMeshRef.current = mainCapMesh;
+  }
+
+  const mainCapDecalTarget = useMemo(() => {
+    if (!mainCapMesh) return null;
+    return (
+      decalTargetMeshMap.get(meshKey(mainCapMesh.name, mainCapMesh.parent?.name)) ||
+      decalTargetMeshMap.get(meshKey(mainCapMesh.name, undefined)) ||
+      null
+    );
+  }, [mainCapMesh, decalTargetMeshMap]);
+
+  if (mainCapDecalTarget) {
+    mainCapDecalTargetRef.current = mainCapDecalTarget;
   }
 
   const { center, size, mcCenter, mcSize, mcFrontZ, mcBackZ } = useMemo(() => {
@@ -270,17 +334,14 @@ export default function HatModel({
 
   const getTargetMesh = (decal: HatDecal): THREE.Mesh | null => {
     if (decal.targetMeshName) {
-      const exact = meshList.find(
-        (mesh) =>
-          mesh.name === decal.targetMeshName &&
-          (!decal.targetParentName || mesh.parent?.name === decal.targetParentName),
-      );
+      const exact = decalTargetMeshMap.get(meshKey(decal.targetMeshName, decal.targetParentName));
       if (exact) return exact;
 
-      const sameName = meshList.find((mesh) => mesh.name === decal.targetMeshName);
-      if (sameName) return sameName;
+      for (const [key, targetMesh] of decalTargetMeshMap.entries()) {
+        if (key.endsWith(`::${decal.targetMeshName}`)) return targetMesh;
+      }
     }
-    return mainCapMesh;
+    return mainCapDecalTarget;
   };
 
   const getHitPlacement = (event: ThreeEvent<PointerEvent>) => {
@@ -354,8 +415,8 @@ export default function HatModel({
           />
         ))}
 
-        {mainCapMesh && frontTexture && (
-          <ProjectedDecal mesh={mainCapMeshRef} position={frontTextPos} rotation={[-0.08, 0, 0]} scale={frontTextScale}>
+        {mainCapDecalTarget && frontTexture && (
+          <ProjectedDecal mesh={mainCapDecalTargetRef} position={frontTextPos} rotation={[-0.08, 0, 0]} scale={frontTextScale}>
             <meshStandardMaterial
               map={frontTexture}
               transparent
@@ -371,9 +432,9 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
-        {mainCapMesh && backTexture && (
+        {mainCapDecalTarget && backTexture && (
           <ProjectedDecal
-            mesh={mainCapMeshRef}
+            mesh={mainCapDecalTargetRef}
             position={backTextPos}
             rotation={[0.08, Math.PI, 0]}
             scale={backTextScale}
@@ -393,8 +454,8 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
-        {mainCapMesh && flagCode && (
-          <ProjectedDecal mesh={mainCapMeshRef} position={rightFlagPos} rotation={[0, Math.PI * 0.5, 0]} scale={flagScale}>
+        {mainCapDecalTarget && flagCode && (
+          <ProjectedDecal mesh={mainCapDecalTargetRef} position={rightFlagPos} rotation={[0, Math.PI * 0.5, 0]} scale={flagScale}>
             <meshStandardMaterial
               map={flagTexture}
               transparent

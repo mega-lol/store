@@ -3,11 +3,26 @@ import HatScene from '@/components/HatScene';
 import CustomizationPanel from '@/components/CustomizationPanel';
 import { DEFAULT_HAT, HatConfig, Decal } from '@/types/hat';
 import { applySiteFont, ensureFontLoaded } from '@/lib/fonts';
+import { decodeDesign } from '@/lib/designShare';
 
 export default function Designer() {
   const [config, setConfig] = useState<HatConfig>({ ...DEFAULT_HAT });
   const [selectedDecalId, setSelectedDecalId] = useState<string | null>(null);
   const [placementMode, setPlacementMode] = useState(false);
+
+  useEffect(() => {
+    const encoded = new URLSearchParams(window.location.search).get('d');
+    if (!encoded) return;
+    const shared = decodeDesign(encoded);
+    if (!shared) return;
+
+    setConfig((prev) => ({
+      ...prev,
+      ...shared,
+      id: shared.id || prev.id || crypto.randomUUID(),
+      decals: Array.isArray(shared.decals) ? shared.decals : prev.decals,
+    }));
+  }, []);
 
   useEffect(() => {
     applySiteFont(config.font);

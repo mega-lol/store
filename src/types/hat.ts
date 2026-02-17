@@ -78,12 +78,12 @@ export const DEFAULT_HAT: HatConfig = {
 export const COUNTRY_HATS: CountryHat[] = [
   {
     id: 'india',
-    hatColor: '#FFFFFF',
-    bandColor: '#FFFFFF',
-    text: 'INDIA\nEDITION',
+    hatColor: '#FF9933',
+    bandColor: '#138808',
+    text: 'INDIA\nPRIDE',
     backText: 'INDIA',
     font: 'Vinegar',
-    textColor: '#000000',
+    textColor: '#000080',
     size: 'M',
     countryCode: 'IN',
     countryName: 'India',
@@ -92,12 +92,12 @@ export const COUNTRY_HATS: CountryHat[] = [
   },
   {
     id: 'iran',
-    hatColor: '#FFFFFF',
-    bandColor: '#FFFFFF',
-    text: 'IRAN\nEDITION',
+    hatColor: '#239f40',
+    bandColor: '#da0000',
+    text: 'IRAN\nPRIDE',
     backText: 'IRAN',
     font: 'Vinegar',
-    textColor: '#000000',
+    textColor: '#ffffff',
     size: 'M',
     countryCode: 'IR',
     countryName: 'Iran',
@@ -106,12 +106,12 @@ export const COUNTRY_HATS: CountryHat[] = [
   },
   {
     id: 'cambodia',
-    hatColor: '#FFFFFF',
-    bandColor: '#FFFFFF',
-    text: 'CAMBODIA\nEDITION',
+    hatColor: '#032EA1',
+    bandColor: '#E00025',
+    text: 'CAMBODIA\nPRIDE',
     backText: 'CAMBODIA',
     font: 'Vinegar',
-    textColor: '#000000',
+    textColor: '#ffffff',
     size: 'M',
     countryCode: 'KH',
     countryName: 'Cambodia',
@@ -120,12 +120,12 @@ export const COUNTRY_HATS: CountryHat[] = [
   },
   {
     id: 'ukraine',
-    hatColor: '#FFFFFF',
-    bandColor: '#FFFFFF',
-    text: 'UKRAINE\nEDITION',
+    hatColor: '#0057B7',
+    bandColor: '#FFD700',
+    text: 'UKRAINE\nPRIDE',
     backText: 'UKRAINE',
     font: 'Vinegar',
-    textColor: '#000000',
+    textColor: '#FFD700',
     size: 'M',
     countryCode: 'UA',
     countryName: 'Ukraine',
@@ -134,7 +134,7 @@ export const COUNTRY_HATS: CountryHat[] = [
   },
 ];
 
-export const COUNTRY_CODES = [
+const COUNTRY_CODE_FALLBACK = [
   { code: 'US', name: 'United States' },
   { code: 'CA', name: 'Canada' },
   { code: 'MX', name: 'Mexico' },
@@ -160,3 +160,30 @@ export const COUNTRY_CODES = [
   { code: 'UA', name: 'Ukraine' },
   { code: 'IR', name: 'Iran' },
 ];
+
+function buildCountryCodes(): Array<{ code: string; name: string }> {
+  if (typeof Intl === 'undefined') return COUNTRY_CODE_FALLBACK;
+
+  const supportedValuesOf = (Intl as unknown as {
+    supportedValuesOf?: (type: string) => string[];
+  }).supportedValuesOf;
+
+  if (!supportedValuesOf) return COUNTRY_CODE_FALLBACK;
+
+  const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
+  const extras = ['XK', 'TW', 'PS', 'VA'];
+  const codeSet = new Set<string>();
+
+  for (const code of supportedValuesOf('region')) {
+    if (/^[A-Z]{2}$/.test(code) && code !== 'EU') {
+      codeSet.add(code);
+    }
+  }
+  for (const code of extras) codeSet.add(code);
+
+  return Array.from(codeSet)
+    .map((code) => ({ code, name: displayNames.of(code) || code }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export const COUNTRY_CODES = buildCountryCodes();

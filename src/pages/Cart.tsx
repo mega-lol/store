@@ -5,10 +5,62 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Minus, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { createCheckoutSession, hasCommerceEndpoint } from '@/lib/commerce';
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, totalPrice, clearCart, totalItems } = useCart();
+  const { toast } = useToast();
   const [ordered, setOrdered] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [zip, setZip] = useState('');
+
+  const handleCheckout = async () => {
+    if (!fullName || !email || !address || !city || !zip) {
+      toast({ title: 'Missing details', description: 'Please complete shipping details first.' });
+      return;
+    }
+
+    if (!hasCommerceEndpoint()) {
+      toast({
+        title: 'Commerce not configured',
+        description: 'Set VITE_HANZO_COMMERCE_URL to enable live checkout.',
+      });
+      return;
+    }
+
+    setIsCheckingOut(true);
+    try {
+      const successUrl = `${window.location.origin}${window.location.pathname}?checkout=success`;
+      const cancelUrl = `${window.location.origin}${window.location.pathname}?checkout=cancel`;
+
+      const session = await createCheckoutSession({
+        company: 'ADXYZ Inc',
+        providerHint: 'stripe',
+        currency: 'USD',
+        customer: { fullName, email, address, city, zip },
+        items: items.map((item) => ({
+          id: item.hat.id,
+          quantity: item.quantity,
+          unitPrice: getHatPrice(item.hat),
+          hat: item.hat,
+        })),
+        successUrl,
+        cancelUrl,
+      });
+
+      window.location.href = session.checkoutUrl;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Checkout could not be started.';
+      toast({ title: 'Checkout failed', description: message });
+    } finally {
+      setIsCheckingOut(false);
+    }
+  };
 
   if (ordered) {
     return (
@@ -73,12 +125,12 @@ export default function Cart() {
           <div className="space-y-4 p-6 rounded-xl border border-border bg-card">
             <h2 className="text-xl font-bold">Shipping Details</h2>
             <div className="space-y-3">
-              <div><Label>Full Name</Label><Input placeholder="John Doe" /></div>
-              <div><Label>Email</Label><Input type="email" placeholder="john@example.com" /></div>
-              <div><Label>Address</Label><Input placeholder="123 Main St" /></div>
+              <div><Label>Full Name</Label><Input placeholder="John Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} /></div>
+              <div><Label>Email</Label><Input type="email" placeholder="john@example.com" value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+              <div><Label>Address</Label><Input placeholder="123 Main St" value={address} onChange={(e) => setAddress(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label>City</Label><Input placeholder="New York" /></div>
-                <div><Label>ZIP</Label><Input placeholder="10001" /></div>
+                <div><Label>City</Label><Input placeholder="New York" value={city} onChange={(e) => setCity(e.target.value)} /></div>
+                <div><Label>ZIP</Label><Input placeholder="10001" value={zip} onChange={(e) => setZip(e.target.value)} /></div>
               </div>
             </div>
           </div>
@@ -95,11 +147,21 @@ export default function Cart() {
             </div>
             <Button
               className="w-full h-12 text-base font-semibold mt-4"
+              disabled={isCheckingOut}
+              onClick={handleCheckout}
+            >
+              {isCheckingOut ? 'Starting checkout...' : 'Checkout'}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              Checkout is routed through Hanzo Commerce (provider-agnostic).
+            </p>
+            <Button
+              variant="ghost"
+              className="w-full h-9 text-xs"
               onClick={() => { clearCart(); setOrdered(true); }}
             >
-              Place Order
+              Mark as Paid (Demo)
             </Button>
-            <p className="text-xs text-muted-foreground text-center">Demo only — no payment will be processed</p>
           </div>
         </div>
       </div>

@@ -48,12 +48,24 @@
   * {
     @apply border-border;
   }
+  html {
+    font-size: 18px;
+  }
   body {
     @apply bg-black text-white;
     font-family: var(--site-font-family);
+    font-weight: 700;
     font-optical-sizing: auto;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+  button,
+  input,
+  select,
+  textarea,
+  label {
+    font-weight: 700;
+    font-size: 0.95rem;
   }
 }
 

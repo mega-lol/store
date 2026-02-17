@@ -6,6 +6,9 @@ export default function Navbar() {
   const { totalItems } = useCart();
   const { pathname } = useLocation();
   const isHome = pathname === '/' || pathname === '';
+  const isEmbedded = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('embed') === '1';
+
+  if (isEmbedded) return null;
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 border-b transition-colors ${
@@ -17,7 +20,7 @@ export default function Navbar() {
         <Link to="/" className={`text-sm tracking-[0.3em] uppercase transition-colors ${
           isHome ? 'text-black/80 hover:text-black' : 'text-white/80 hover:text-white'
         }`}>
-          STUDIO
+          MEGA
         </Link>
         <div className="flex items-center gap-4">
           <Link to="/collection" className={`text-[10px] tracking-[0.2em] uppercase transition-colors ${

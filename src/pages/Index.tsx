@@ -41,7 +41,7 @@ export default function Index() {
       <div className="absolute top-16 left-6 z-10 animate-fade-up delay-300" style={{ opacity: 0 }}>
         <p className="text-[9px] tracking-[0.4em] uppercase text-black/30 mb-2">3D Clothing Designer</p>
         <h1 className="text-6xl md:text-8xl lg:text-9xl font-bold tracking-tighter leading-[0.85] text-black/90">
-          STUDIO
+          MEGA
         </h1>
       </div>
 
