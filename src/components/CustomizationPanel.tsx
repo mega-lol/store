@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
@@ -7,7 +7,7 @@ import { HatConfig, PRESET_HAT_COLORS, PRESET_TEXT_COLORS, Decal, COUNTRY_CODES,
 import { useCart } from '@/store/cartStore';
 import { ShoppingCart, Share2, Plus, Trash2, Upload, Image as ImageIcon, Type, RotateCw, Move } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { applySiteFont, ensureFontLoaded } from '@/lib/fonts';
+import { applySiteFont, ensureFontLoaded, toFontStack } from '@/lib/fonts';
 import { v4 as uuidv4 } from 'uuid';
 
 interface CustomizationPanelProps {
@@ -24,6 +24,18 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
   const { addItem } = useCart();
   const { toast } = useToast();
   const [googleFontName, setGoogleFontName] = useState('');
+  const [canvasBaseUrl, setCanvasBaseUrl] = useState<string | null>(null);
+  const [canvasTopText, setCanvasTopText] = useState('MEGA');
+  const [canvasBottomText, setCanvasBottomText] = useState('');
+  const [canvasTextColor, setCanvasTextColor] = useState('#ffffff');
+  const [canvasFontSize, setCanvasFontSize] = useState(88);
+  const [canvasImageScale, setCanvasImageScale] = useState(1);
+  const [canvasImageRotation, setCanvasImageRotation] = useState(0);
+  const [canvasBrightness, setCanvasBrightness] = useState(100);
+  const [canvasContrast, setCanvasContrast] = useState(100);
+  const [canvasSaturation, setCanvasSaturation] = useState(100);
+  const canvasPreviewRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasImageRef = useRef<HTMLImageElement | null>(null);
 
   const update = (partial: Partial<HatConfig>) => onChange({ ...config, ...partial });
 
@@ -51,6 +63,118 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
 
   const handleFlagChange = (value: string) => {
     update({ flagCode: value === FLAG_NONE ? undefined : value });
+  };
+
+  const redrawCanvasPreview = () => {
+    const canvas = canvasPreviewRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#141414';
+    ctx.fillRect(0, 0, w, h);
+
+    const img = canvasImageRef.current;
+    if (img) {
+      ctx.save();
+      ctx.translate(w / 2, h / 2);
+      ctx.rotate((canvasImageRotation * Math.PI) / 180);
+      ctx.filter = `brightness(${canvasBrightness}%) contrast(${canvasContrast}%) saturate(${canvasSaturation}%)`;
+      const fit = Math.min(w / img.width, h / img.height);
+      const drawW = img.width * fit * canvasImageScale;
+      const drawH = img.height * fit * canvasImageScale;
+      ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+      ctx.restore();
+    }
+
+    const fontStack = toFontStack(config.font);
+    const lineHeight = canvasFontSize * 1.05;
+    const topLines = canvasTopText.split('\n').filter(Boolean);
+    const bottomLines = canvasBottomText.split('\n').filter(Boolean);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = canvasTextColor;
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = Math.max(2, canvasFontSize * 0.06);
+    ctx.font = `900 ${canvasFontSize}px ${fontStack}`;
+
+    topLines.forEach((line, index) => {
+      const y = 80 + index * lineHeight;
+      ctx.strokeText(line, w / 2, y);
+      ctx.fillText(line, w / 2, y);
+    });
+
+    bottomLines.forEach((line, index) => {
+      const y = h - 80 - (bottomLines.length - 1 - index) * lineHeight;
+      ctx.strokeText(line, w / 2, y);
+      ctx.fillText(line, w / 2, y);
+    });
+  };
+
+  useEffect(() => {
+    redrawCanvasPreview();
+  }, [
+    config.font,
+    canvasTopText,
+    canvasBottomText,
+    canvasTextColor,
+    canvasFontSize,
+    canvasImageScale,
+    canvasImageRotation,
+    canvasBrightness,
+    canvasContrast,
+    canvasSaturation,
+  ]);
+
+  useEffect(() => {
+    if (!canvasBaseUrl) {
+      canvasImageRef.current = null;
+      redrawCanvasPreview();
+      return;
+    }
+
+    const img = new Image();
+    img.src = canvasBaseUrl;
+    img.onload = () => {
+      canvasImageRef.current = img;
+      redrawCanvasPreview();
+    };
+  }, [canvasBaseUrl]);
+
+  const handleCanvasBaseUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCanvasBaseUrl(URL.createObjectURL(file));
+  };
+
+  const addCanvasAsDecal = () => {
+    const canvas = canvasPreviewRef.current;
+    if (!canvas) return;
+
+    const newDecal: Decal = {
+      id: uuidv4(),
+      type: 'image',
+      url: canvas.toDataURL('image/png'),
+      position: [0, 0.45, 0.84],
+      rotation: [0, 0, 0],
+      scale: [0.2, 0.2, 0.2],
+    };
+
+    update({ decals: [...config.decals, newDecal] });
+    onSelectDecal?.(newDecal.id);
+    toast({ title: 'Canvas Added', description: 'Canvas design added as a decal layer.' });
+  };
+
+  const useCanvasAsTexture = () => {
+    const canvas = canvasPreviewRef.current;
+    if (!canvas) return;
+    update({ texture: canvas.toDataURL('image/png') });
+    toast({ title: 'Texture Applied', description: 'Canvas design is now your hat texture.' });
   };
 
   const handleAddToCart = () => {
@@ -139,9 +263,10 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
 
       <div className="flex-1 overflow-y-auto p-5 pt-0 space-y-6">
         <Tabs defaultValue="base" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 bg-white/5 mb-4">
+          <TabsList className="w-full grid grid-cols-4 bg-white/5 mb-4">
             <TabsTrigger value="base">Base</TabsTrigger>
             <TabsTrigger value="text">Text</TabsTrigger>
+            <TabsTrigger value="canvas">Canvas</TabsTrigger>
             <TabsTrigger value="decals">Decals</TabsTrigger>
           </TabsList>
 
@@ -316,6 +441,159 @@ export default function CustomizationPanel({ config, onChange, selectedDecalId, 
                 maxLength={40}
                 className="w-full h-8 text-xs bg-transparent border border-white/10 text-white placeholder:text-white/20 px-2 focus:outline-none focus:border-white/30"
               />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="canvas" className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-white">Canvas Base Image</label>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  className="w-full border-dashed border-white/20 hover:border-white/40 bg-transparent text-white/60 hover:text-white"
+                  onClick={() => document.getElementById('canvas-base-upload')?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {canvasBaseUrl ? 'Change Base' : 'Upload Base'}
+                </Button>
+                {canvasBaseUrl && (
+                  <Button
+                    variant="outline"
+                    className="px-2 border-white/20 hover:bg-red-900/50 hover:border-red-500/50"
+                    onClick={() => setCanvasBaseUrl(null)}
+                  >
+                    <Trash2 className="h-4 w-4 text-white/60" />
+                  </Button>
+                )}
+              </div>
+              <input
+                id="canvas-base-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleCanvasBaseUpload}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Preview</label>
+              <div className="border border-white/10 bg-black p-2">
+                <canvas ref={canvasPreviewRef} width={1024} height={1024} className="w-full aspect-square" />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Top Text</label>
+              <input
+                value={canvasTopText}
+                onChange={e => setCanvasTopText(e.target.value)}
+                className="w-full h-8 text-xs bg-transparent border border-white/10 text-white px-2 focus:outline-none focus:border-white/30"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[10px] tracking-[0.2em] uppercase text-white/40">Bottom Text</label>
+              <input
+                value={canvasBottomText}
+                onChange={e => setCanvasBottomText(e.target.value)}
+                className="w-full h-8 text-xs bg-transparent border border-white/10 text-white px-2 focus:outline-none focus:border-white/30"
+              />
+            </div>
+
+            <ColorPicker
+              label="Canvas Text Color"
+              value={canvasTextColor}
+              onChange={setCanvasTextColor}
+              presets={PRESET_TEXT_COLORS}
+            />
+
+            <div className="space-y-2">
+              <label className="text-[10px] text-white/40 uppercase">Text Size</label>
+              <Slider
+                defaultValue={[canvasFontSize]}
+                min={32}
+                max={180}
+                step={2}
+                value={[canvasFontSize]}
+                onValueChange={([val]) => setCanvasFontSize(val)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] text-white/40 uppercase">Image Scale</label>
+              <Slider
+                defaultValue={[canvasImageScale]}
+                min={0.5}
+                max={2.5}
+                step={0.05}
+                value={[canvasImageScale]}
+                onValueChange={([val]) => setCanvasImageScale(val)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] text-white/40 uppercase">Image Rotation</label>
+              <Slider
+                defaultValue={[canvasImageRotation]}
+                min={-180}
+                max={180}
+                step={1}
+                value={[canvasImageRotation]}
+                onValueChange={([val]) => setCanvasImageRotation(val)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] text-white/40 uppercase">Brightness</label>
+              <Slider
+                defaultValue={[canvasBrightness]}
+                min={25}
+                max={200}
+                step={1}
+                value={[canvasBrightness]}
+                onValueChange={([val]) => setCanvasBrightness(val)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] text-white/40 uppercase">Contrast</label>
+              <Slider
+                defaultValue={[canvasContrast]}
+                min={25}
+                max={200}
+                step={1}
+                value={[canvasContrast]}
+                onValueChange={([val]) => setCanvasContrast(val)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] text-white/40 uppercase">Saturation</label>
+              <Slider
+                defaultValue={[canvasSaturation]}
+                min={0}
+                max={200}
+                step={1}
+                value={[canvasSaturation]}
+                onValueChange={([val]) => setCanvasSaturation(val)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                className="h-9 border-white/20 text-white/80 hover:text-white"
+                onClick={useCanvasAsTexture}
+              >
+                Use As Texture
+              </Button>
+              <Button
+                variant="outline"
+                className="h-9 border-white/20 text-white/80 hover:text-white"
+                onClick={addCanvasAsDecal}
+              >
+                Add As Decal
+              </Button>
             </div>
           </TabsContent>
 
