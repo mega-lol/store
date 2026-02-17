@@ -6,6 +6,7 @@ const HANZO_COMMERCE_URL = configuredCommerceUrl && configuredCommerceUrl.length
   : '/api/commerce';
 const HANZO_TENANT = (import.meta.env.VITE_HANZO_TENANT as string | undefined)?.trim();
 const HANZO_ORG = (import.meta.env.VITE_HANZO_ORG as string | undefined)?.trim();
+const HANZO_PROJECT = (import.meta.env.VITE_HANZO_PROJECT as string | undefined)?.trim();
 
 export interface CheckoutCustomer {
   fullName: string;
@@ -28,6 +29,7 @@ export interface CheckoutSessionRequest {
   currency: string;
   tenant?: string;
   org?: string;
+  project?: string;
   customer: CheckoutCustomer;
   items: CheckoutItem[];
   successUrl: string;
@@ -49,11 +51,13 @@ export async function createCheckoutSession(
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (HANZO_TENANT) headers['X-Hanzo-Tenant'] = HANZO_TENANT;
   if (HANZO_ORG) headers['X-Hanzo-Org'] = HANZO_ORG;
+  if (HANZO_PROJECT) headers['X-Hanzo-Project'] = HANZO_PROJECT;
 
   const requestBody: CheckoutSessionRequest = {
     ...request,
     tenant: request.tenant || HANZO_TENANT,
     org: request.org || HANZO_ORG,
+    project: request.project || HANZO_PROJECT,
   };
 
   const response = await fetch(`${HANZO_COMMERCE_URL.replace(/\/$/, '')}/checkout/sessions`, {

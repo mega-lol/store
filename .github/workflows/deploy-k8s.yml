@@ -100,6 +100,7 @@ jobs:
             VITE_HANZO_COMMERCE_URL=${{ vars.HANZO_COMMERCE_URL }}
             VITE_HANZO_TENANT=${{ vars.HANZO_TENANT }}
             VITE_HANZO_ORG=${{ vars.HANZO_ORG }}
+            VITE_HANZO_PROJECT=${{ vars.HANZO_PROJECT }}
             VITE_ADXYZ_HOME_URL=${{ vars.ADXYZ_HOME_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

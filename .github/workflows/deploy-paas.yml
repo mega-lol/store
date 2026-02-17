@@ -16,6 +16,11 @@ on:
         required: true
         default: "adxyz"
         type: string
+      project_slug:
+        description: "PaaS project slug (customer project)"
+        required: true
+        default: "megastore"
+        type: string
       container_iid:
         description: "PaaS container iid"
         required: true
@@ -42,6 +47,7 @@ env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mega-store
   PAAS_API: ${{ vars.PAAS_API_URL }}
   ORG_SLUG: ${{ github.event.inputs.org_slug || 'adxyz' }}
+  PROJECT_SLUG: ${{ github.event.inputs.project_slug || 'megastore' }}
 
 jobs:
   deploy:
@@ -97,6 +103,7 @@ jobs:
             VITE_HANZO_COMMERCE_URL=${{ vars.HANZO_COMMERCE_URL }}
             VITE_HANZO_TENANT=${{ vars.HANZO_TENANT }}
             VITE_HANZO_ORG=${{ vars.HANZO_ORG }}
+            VITE_HANZO_PROJECT=${{ vars.HANZO_PROJECT }}
             VITE_ADXYZ_HOME_URL=${{ vars.ADXYZ_HOME_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -138,9 +145,9 @@ jobs:
           fi
           echo "org_id=$ORG_ID" >> "$GITHUB_OUTPUT"
 
-          PROJECT_ID=$(curl -sf "$API/org/$ORG_ID/project" -H "Authorization: $TOKEN" | jq -r '.[0]._id')
+          PROJECT_ID=$(curl -sf "$API/org/$ORG_ID/project" -H "Authorization: $TOKEN" | jq -r ".[] | select(.iid == \"${{ env.PROJECT_SLUG }}\" or .name == \"${{ env.PROJECT_SLUG }}\") | ._id" | head -1)
           if [[ -z "$PROJECT_ID" || "$PROJECT_ID" == "null" ]]; then
-            echo "::error::No project found in org '${{ env.ORG_SLUG }}'"
+            echo "::error::Project '${{ env.PROJECT_SLUG }}' not found in org '${{ env.ORG_SLUG }}'"
             exit 1
           fi
           echo "project_id=$PROJECT_ID" >> "$GITHUB_OUTPUT"

@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart, getHatPrice } from '@/store/cartStore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Minus, Plus, Trash2, CheckCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { createCheckoutSession } from '@/lib/commerce';
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, totalPrice, clearCart, totalItems } = useCart();
   const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [ordered, setOrdered] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -18,6 +20,26 @@ export default function Cart() {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [zip, setZip] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const checkout = params.get('checkout');
+    if (!checkout) return;
+
+    if (checkout === 'success') {
+      clearCart();
+      setOrdered(true);
+    } else if (checkout === 'cancel') {
+      toast({ title: 'Checkout canceled', description: 'No worries. Your cart is still here.' });
+    }
+
+    params.delete('checkout');
+    const newSearch = params.toString();
+    navigate(
+      { pathname: location.pathname, search: newSearch ? `?${newSearch}` : '' },
+      { replace: true },
+    );
+  }, [location.pathname, location.search, clearCart, navigate, toast]);
 
   const handleCheckout = async () => {
     if (!fullName || !email || !address || !city || !zip) {

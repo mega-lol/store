@@ -8,6 +8,7 @@ resources:
   - namespace.yaml
   - ingress.yaml
   - commerce-proxy-service.yaml
+  - certificate.yaml
 
 images:
   - name: ghcr.io/ad-xyz/mega-store
