@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import HatScene from '@/components/HatScene';
 import { DEFAULT_HAT } from '@/types/hat';
-import { useCart, getHatPrice } from '@/store/cartStore';
-import { useToast } from '@/hooks/use-toast';
 
 const config = DEFAULT_HAT;
-const defaultPrice = getHatPrice(config);
 
 const TRANSLATIONS = [
   { text: 'Make Earth Great Again', lang: 'English' },
@@ -47,16 +44,6 @@ const TRANSLATIONS = [
 ];
 
 export default function Index() {
-  const navigate = useNavigate();
-  const { addItem } = useCart();
-  const { toast } = useToast();
-
-  const handlePreorder = () => {
-    addItem(config);
-    toast({ title: 'Added to cart', description: 'MEGA hat added to your cart.' });
-    navigate('/cart');
-  };
-
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState<'in' | 'hold' | 'out'>('in');
 
@@ -156,13 +143,12 @@ export default function Index() {
         {/* CTA */}
         <div className="absolute bottom-12 left-6 md:left-12 z-10 animate-fade-up delay-500" style={{ opacity: 0 }}>
           <div className="flex items-center gap-3 flex-wrap">
-            <button
-              type="button"
-              onClick={handlePreorder}
+            <Link
+              to="/collection"
               className="h-11 px-8 rounded-full bg-white text-black text-xs tracking-[0.2em] uppercase font-bold hover:bg-white/90 transition-colors shadow-[0_12px_44px_rgba(0,0,0,0.35)] flex items-center"
             >
-              Pre-order ${defaultPrice.toFixed(0)}
-            </button>
+              Browse Collection
+            </Link>
             <Link
               to="/designer"
               className="h-11 px-8 rounded-full border border-white/25 text-white text-xs tracking-[0.2em] uppercase font-bold hover:border-white/50 hover:bg-white/5 transition-colors flex items-center"
