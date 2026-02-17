@@ -19,10 +19,19 @@ on:
       overlay:
         description: "Kustomize overlay to deploy"
         required: true
-        default: "ad-xyz"
+        default: "megastore-lol"
         type: choice
         options:
+          - megastore-lol
           - ad-xyz
+      base_path:
+        description: "Vite base path for build assets"
+        required: true
+        default: "/"
+        type: choice
+        options:
+          - /
+          - /mega/
       image_tag:
         description: "Optional image tag override"
         required: false
@@ -34,7 +43,8 @@ permissions:
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mega-store
-  OVERLAY: ${{ github.event.inputs.overlay || 'ad-xyz' }}
+  OVERLAY: ${{ github.event.inputs.overlay || 'megastore-lol' }}
+  BASE_PATH: ${{ github.event.inputs.base_path || '/' }}
 
 jobs:
   deploy:
@@ -86,8 +96,10 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
           build-args: |
-            VITE_BASE_PATH=/mega/
+            VITE_BASE_PATH=${{ env.BASE_PATH }}
             VITE_HANZO_COMMERCE_URL=${{ vars.HANZO_COMMERCE_URL }}
+            VITE_HANZO_TENANT=${{ vars.HANZO_TENANT }}
+            VITE_HANZO_ORG=${{ vars.HANZO_ORG }}
             VITE_ADXYZ_HOME_URL=${{ vars.ADXYZ_HOME_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

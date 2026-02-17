@@ -1,6 +1,11 @@
 import { HatConfig } from '@/types/hat';
 
-const HANZO_COMMERCE_URL = import.meta.env.VITE_HANZO_COMMERCE_URL as string | undefined;
+const configuredCommerceUrl = (import.meta.env.VITE_HANZO_COMMERCE_URL as string | undefined)?.trim();
+const HANZO_COMMERCE_URL = configuredCommerceUrl && configuredCommerceUrl.length > 0
+  ? configuredCommerceUrl
+  : '/api/commerce';
+const HANZO_TENANT = (import.meta.env.VITE_HANZO_TENANT as string | undefined)?.trim();
+const HANZO_ORG = (import.meta.env.VITE_HANZO_ORG as string | undefined)?.trim();
 
 export interface CheckoutCustomer {
   fullName: string;
@@ -21,6 +26,8 @@ export interface CheckoutSessionRequest {
   company: 'ADXYZ Inc';
   providerHint: 'stripe';
   currency: string;
+  tenant?: string;
+  org?: string;
   customer: CheckoutCustomer;
   items: CheckoutItem[];
   successUrl: string;
@@ -33,20 +40,26 @@ export interface CheckoutSessionResponse {
 }
 
 export function hasCommerceEndpoint(): boolean {
-  return Boolean(HANZO_COMMERCE_URL);
+  return Boolean(HANZO_COMMERCE_URL && HANZO_COMMERCE_URL.trim().length > 0);
 }
 
 export async function createCheckoutSession(
   request: CheckoutSessionRequest,
 ): Promise<CheckoutSessionResponse> {
-  if (!HANZO_COMMERCE_URL) {
-    throw new Error('Missing VITE_HANZO_COMMERCE_URL');
-  }
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (HANZO_TENANT) headers['X-Hanzo-Tenant'] = HANZO_TENANT;
+  if (HANZO_ORG) headers['X-Hanzo-Org'] = HANZO_ORG;
+
+  const requestBody: CheckoutSessionRequest = {
+    ...request,
+    tenant: request.tenant || HANZO_TENANT,
+    org: request.org || HANZO_ORG,
+  };
 
   const response = await fetch(`${HANZO_COMMERCE_URL.replace(/\/$/, '')}/checkout/sessions`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
+    headers,
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {

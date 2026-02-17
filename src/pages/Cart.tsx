@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Minus, Plus, Trash2, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { createCheckoutSession, hasCommerceEndpoint } from '@/lib/commerce';
+import { createCheckoutSession } from '@/lib/commerce';
 
 export default function Cart() {
   const { items, updateQuantity, removeItem, totalPrice, clearCart, totalItems } = useCart();
@@ -22,14 +22,6 @@ export default function Cart() {
   const handleCheckout = async () => {
     if (!fullName || !email || !address || !city || !zip) {
       toast({ title: 'Missing details', description: 'Please complete shipping details first.' });
-      return;
-    }
-
-    if (!hasCommerceEndpoint()) {
-      toast({
-        title: 'Commerce not configured',
-        description: 'Set VITE_HANZO_COMMERCE_URL to enable live checkout.',
-      });
       return;
     }
 

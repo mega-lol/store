@@ -11,6 +11,11 @@ on:
         options:
           - production
           - staging
+      org_slug:
+        description: "PaaS organization slug (tenant)"
+        required: true
+        default: "adxyz"
+        type: string
       container_iid:
         description: "PaaS container iid"
         required: true
@@ -20,6 +25,14 @@ on:
         description: "Optional image tag override"
         required: false
         type: string
+      base_path:
+        description: "Vite base path for build assets"
+        required: true
+        default: "/"
+        type: choice
+        options:
+          - /
+          - /mega/
 
 permissions:
   contents: read
@@ -28,7 +41,7 @@ permissions:
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/mega-store
   PAAS_API: ${{ vars.PAAS_API_URL }}
-  ORG_SLUG: adxyz
+  ORG_SLUG: ${{ github.event.inputs.org_slug || 'adxyz' }}
 
 jobs:
   deploy:
@@ -80,8 +93,10 @@ jobs:
             ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:${{ steps.tag.outputs.value }}
           build-args: |
-            VITE_BASE_PATH=/mega/
+            VITE_BASE_PATH=${{ github.event.inputs.base_path }}
             VITE_HANZO_COMMERCE_URL=${{ vars.HANZO_COMMERCE_URL }}
+            VITE_HANZO_TENANT=${{ vars.HANZO_TENANT }}
+            VITE_HANZO_ORG=${{ vars.HANZO_ORG }}
             VITE_ADXYZ_HOME_URL=${{ vars.ADXYZ_HOME_URL }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
