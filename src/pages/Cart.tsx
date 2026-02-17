@@ -13,7 +13,7 @@ export default function Cart() {
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
-  const [ordered, setOrdered] = useState(false);
+  const [orderStatus, setOrderStatus] = useState<'none' | 'paid' | 'preorder'>('none');
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -28,7 +28,10 @@ export default function Cart() {
 
     if (checkout === 'success') {
       clearCart();
-      setOrdered(true);
+      setOrderStatus('paid');
+    } else if (checkout === 'preorder') {
+      clearCart();
+      setOrderStatus('preorder');
     } else if (checkout === 'cancel') {
       toast({ title: 'Checkout canceled', description: 'No worries. Your cart is still here.' });
     }
@@ -70,19 +73,30 @@ export default function Cart() {
       window.location.href = session.checkoutUrl;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Checkout could not be started.';
-      toast({ title: 'Checkout failed', description: message });
+      const missingBackend = /404|page not found/i.test(message);
+
+      if (missingBackend) {
+        toast({
+          title: 'Pre-order placed',
+          description: 'Payments are not enabled yet. We will follow up with a payment link.',
+        });
+        clearCart();
+        setOrderStatus('preorder');
+      } else {
+        toast({ title: 'Checkout failed', description: message });
+      }
     } finally {
       setIsCheckingOut(false);
     }
   };
 
-  if (ordered) {
+  if (orderStatus !== 'none') {
     return (
       <main className="min-h-screen pt-16 flex items-center justify-center px-4">
         <div className="text-center space-y-4 max-w-md">
           <CheckCircle className="h-16 w-16 text-primary mx-auto" />
-          <h1 className="text-3xl font-bold">Order Confirmed!</h1>
-          <p className="text-muted-foreground">Thanks for your order. Your custom items are being prepared.</p>
+          <h1 className="text-3xl font-bold">{orderStatus === 'preorder' ? 'Pre-order Received!' : 'Order Confirmed!'}</h1>
+          <p className="text-muted-foreground">{orderStatus === 'preorder' ? 'Thanks! We will email you to confirm details and collect payment.' : 'Thanks for your order. Your custom items are being prepared.'}</p>
           <Link to="/"><Button>Back to Home</Button></Link>
         </div>
       </main>
@@ -172,7 +186,7 @@ export default function Cart() {
             <Button
               variant="ghost"
               className="w-full h-9 text-xs"
-              onClick={() => { clearCart(); setOrdered(true); }}
+              onClick={() => { clearCart(); setOrderStatus('paid'); }}
             >
               Mark as Paid (Demo)
             </Button>
