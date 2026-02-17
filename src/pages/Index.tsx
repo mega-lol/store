@@ -135,12 +135,9 @@ export default function Index() {
 
         {/* Headline */}
         <div className="absolute top-20 left-6 md:left-12 z-10 max-w-xl animate-fade-up delay-300" style={{ opacity: 0 }}>
-          <h1 className="text-5xl sm:text-6xl md:text-8xl lg:text-[7.5rem] font-black tracking-[-0.06em] leading-[0.84] text-white drop-shadow-[0_10px_45px_rgba(0,0,0,0.7)]">
+          <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-[6.5rem] font-black tracking-[-0.06em] leading-[0.84] text-white drop-shadow-[0_10px_45px_rgba(0,0,0,0.7)]">
             MAKE EARTH<br />GREAT AGAIN
           </h1>
-          <p className="mt-4 text-[10px] md:text-[11px] tracking-[0.35em] uppercase text-white/55 font-black">
-            MEGA EARTH!
-          </p>
           <p className="mt-3 text-lg md:text-xl text-white/65 font-medium leading-snug max-w-md">
             Make Earth Great — Together
           </p>
