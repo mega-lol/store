@@ -15,6 +15,7 @@ interface HatModelProps {
   texture?: string;
   text: string;
   backText?: string;
+  brimText?: string;
   textColor: string;
   textStyle?: TextStyle;
   fontFamily?: string;
@@ -241,6 +242,141 @@ function makeTextTexture(
   return tex;
 }
 
+function drawLaurelBranch(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  branchLen: number,
+  leafSize: number,
+  mirror: boolean,
+  color: string,
+) {
+  ctx.save();
+  const dir = mirror ? -1 : 1;
+
+  // Gold gradient for leaves
+  const leafGrad = ctx.createLinearGradient(cx, cy - leafSize, cx, cy + leafSize);
+  leafGrad.addColorStop(0, '#FFE850');
+  leafGrad.addColorStop(0.3, '#E8A000');
+  leafGrad.addColorStop(0.6, '#FFD000');
+  leafGrad.addColorStop(1, '#CC8800');
+
+  // Draw curved stem
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.quadraticCurveTo(cx + dir * branchLen * 0.5, cy - branchLen * 0.15, cx + dir * branchLen, cy - branchLen * 0.1);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = Math.max(2, leafSize * 0.12);
+  ctx.globalAlpha = 0.8;
+  ctx.stroke();
+
+  // Draw leaves along the branch
+  const leafCount = 6;
+  for (let i = 0; i < leafCount; i++) {
+    const t = (i + 1) / (leafCount + 0.5);
+    // Position along branch curve
+    const bx = cx + dir * branchLen * t;
+    const by = cy - branchLen * 0.15 * Math.sin(t * Math.PI * 0.7);
+
+    // Alternating up/down leaves
+    const upDown = i % 2 === 0 ? -1 : 1;
+    const angle = dir * (-0.3 + t * 0.5) + upDown * 0.5;
+    const lSize = leafSize * (0.7 + (1 - t) * 0.5);
+
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(angle);
+
+    // Leaf shape (ellipse)
+    ctx.beginPath();
+    ctx.ellipse(0, 0, lSize * 0.35, lSize * 0.85, 0, 0, Math.PI * 2);
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = leafGrad;
+    ctx.fill();
+
+    // Leaf outline
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = '#9B7018';
+    ctx.lineWidth = Math.max(1, lSize * 0.06);
+    ctx.stroke();
+
+    // Center vein
+    ctx.beginPath();
+    ctx.moveTo(0, -lSize * 0.7);
+    ctx.lineTo(0, lSize * 0.7);
+    ctx.globalAlpha = 0.3;
+    ctx.strokeStyle = '#9B7018';
+    ctx.lineWidth = Math.max(1, lSize * 0.05);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function makeBrimTexture(
+  brimText: string,
+  textColor: string,
+  renderer: THREE.WebGLRenderer,
+  fontFamily?: string,
+  textStyle: TextStyle = 'flat',
+): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 512;
+  const ctx = c.getContext('2d')!;
+  ctx.clearRect(0, 0, c.width, c.height);
+
+  const cx = c.width * 0.5;
+  const cy = c.height * 0.52;
+
+  // Draw text
+  const fontStack = toFontStack(fontFamily);
+  let fontSize = 120;
+  ctx.font = `900 ${fontSize}px ${fontStack}`;
+  const measured = ctx.measureText(brimText).width;
+  if (measured > c.width * 0.55) {
+    fontSize = Math.floor((fontSize * c.width * 0.55) / measured);
+  }
+
+  ctx.font = `900 ${fontSize}px ${fontStack}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  if (textStyle === 'gold-embroidery') {
+    drawGoldEmbroidery(ctx, brimText, cx, cy, fontSize);
+  } else if (textStyle === 'embroidery') {
+    drawEmbroideryStitch(ctx, brimText, cx, cy, fontSize, textColor);
+  } else if (textStyle === 'puff-3d') {
+    draw3DPuff(ctx, brimText, cx, cy, fontSize, textColor);
+  } else {
+    ctx.fillStyle = textColor;
+    ctx.fillText(brimText, cx, cy);
+  }
+
+  // Measure text bounds for laurel positioning
+  const textWidth = ctx.measureText(brimText).width;
+  const laurelGap = fontSize * 0.35;
+  const branchLen = Math.min(c.width * 0.16, fontSize * 2.5);
+  const leafSize = fontSize * 0.28;
+
+  // Left laurel branch (mirrored)
+  drawLaurelBranch(ctx, cx - textWidth * 0.5 - laurelGap, cy, branchLen, leafSize, true, '#B8860B');
+  // Right laurel branch
+  drawLaurelBranch(ctx, cx + textWidth * 0.5 + laurelGap, cy, branchLen, leafSize, false, '#B8860B');
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.flipY = true;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  tex.needsUpdate = true;
+  return tex;
+}
+
 function meshKey(name?: string, parentName?: string): string {
   return `${parentName || ''}::${name || ''}`;
 }
@@ -251,6 +387,7 @@ export default function HatModel({
   texture,
   text,
   backText,
+  brimText,
   textColor,
   textStyle = 'flat',
   fontFamily,
@@ -427,6 +564,12 @@ export default function HatModel({
     return makeTextTexture(lines, textColor, gl, fontFamily, textStyle);
   }, [backText, textColor, gl, fontFamily, textStyle]);
 
+  // Brim text with laurel leaves
+  const brimTexture = useMemo(() => {
+    if (!brimText) return null;
+    return makeBrimTexture(brimText, textColor, gl, fontFamily, textStyle);
+  }, [brimText, textColor, gl, fontFamily, textStyle]);
+
   // Dispose textures on change/unmount
   useEffect(() => {
     return () => { frontTexture?.dispose(); };
@@ -435,6 +578,10 @@ export default function HatModel({
   useEffect(() => {
     return () => { backTexture?.dispose(); };
   }, [backTexture]);
+
+  useEffect(() => {
+    return () => { brimTexture?.dispose(); };
+  }, [brimTexture]);
 
   useEffect(() => {
     capMesh.traverse((child) => {
@@ -595,6 +742,14 @@ export default function HatModel({
   const flagHeight = flagWidth * flagAspect;
   const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 0.06)];
 
+  // Brim text positioning - on top of the visor/brim
+  const brimTextPos: [number, number, number] = [
+    mcCenter.x,
+    mcCenter.y - mcSize.y * 0.30,
+    mcFrontZ + mcSize.z * 0.22,
+  ];
+  const brimTextScale: [number, number, number] = [mcSize.x * 0.95, mcSize.y * 0.18, Math.max(mcSize.z * 0.6, 0.12)];
+
   return (
     <group ref={groupRef} scale={displayScale}>
       <group ref={modelRef} position={[-center.x, -center.y, -center.z]}>
@@ -665,6 +820,31 @@ export default function HatModel({
               polygonOffsetUnits={-2}
               roughness={textStyle === 'gold-embroidery' ? 0.18 : textStyle === 'puff-3d' ? 0.45 : 0.65}
               metalness={textStyle === 'gold-embroidery' ? 0.85 : textStyle === 'puff-3d' ? 0.15 : 0.05}
+              emissive={textStyle === 'gold-embroidery' ? '#6B4500' : '#000000'}
+              emissiveIntensity={textStyle === 'gold-embroidery' ? 0.35 : 0}
+            />
+          </ProjectedDecal>
+        )}
+
+        {/* Brim text with laurel leaves */}
+        {mainCapDecalTarget && brimTexture && (
+          <ProjectedDecal
+            mesh={mainCapDecalTargetRef}
+            position={brimTextPos}
+            rotation={[-0.85, 0, 0]}
+            scale={brimTextScale}
+          >
+            <meshStandardMaterial
+              map={brimTexture}
+              transparent
+              alphaTest={0.06}
+              depthTest
+              depthWrite={false}
+              polygonOffset
+              polygonOffsetFactor={-2.5}
+              polygonOffsetUnits={-2.5}
+              roughness={textStyle === 'gold-embroidery' ? 0.18 : 0.65}
+              metalness={textStyle === 'gold-embroidery' ? 0.85 : 0.05}
               emissive={textStyle === 'gold-embroidery' ? '#6B4500' : '#000000'}
               emissiveIntensity={textStyle === 'gold-embroidery' ? 0.35 : 0}
             />

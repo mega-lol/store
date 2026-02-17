@@ -36,6 +36,7 @@ export interface HatConfig {
   texture?: string;
   text: string;
   backText?: string;
+  brimText?: string;
   font: string;
   textColor: string;
   textStyle: TextStyle;
@@ -134,6 +135,7 @@ export const DEFAULT_HAT: HatConfig = {
   bandColor: '#D4A017',
   text: 'MAKE EARTH\nGREAT AGAIN',
   backText: '',
+  brimText: 'បង្កើតឡើងដើម្បីសន្តិភាព',
   font: 'Vinegar',
   textColor: '#FFD700',
   textStyle: 'gold-embroidery',
@@ -152,6 +154,7 @@ export const BUILT_IN_PRESETS: DesignPreset[] = [
       bandColor: '#D4A017',
       text: 'MAKE EARTH\nGREAT AGAIN',
       backText: '',
+      brimText: 'បង្កើតឡើងដើម្បីសន្តិភាព',
       font: 'Vinegar',
       textColor: '#FFD700',
       textStyle: 'gold-embroidery',
@@ -216,6 +219,7 @@ export const BUILT_IN_PRESETS: DesignPreset[] = [
       bandColor: '#FFD700',
       text: 'MAKE EARTH\nGREAT AGAIN',
       backText: 'CAMBODIA',
+      brimText: 'បង្កើតឡើងដើម្បីសន្តិភាព',
       font: 'Vinegar',
       textColor: '#FFD700',
       textStyle: 'gold-embroidery',

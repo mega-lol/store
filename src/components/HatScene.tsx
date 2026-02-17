@@ -13,6 +13,7 @@ interface HatSceneProps {
   texture?: string;
   text: string;
   backText?: string;
+  brimText?: string;
   textColor: string;
   textStyle?: TextStyle;
   font?: string;
@@ -53,6 +54,7 @@ export default function HatScene({
   texture,
   text,
   backText,
+  brimText,
   textColor,
   textStyle,
   font,
@@ -93,6 +95,7 @@ export default function HatScene({
             texture={texture}
             text={text}
             backText={backText}
+            brimText={brimText}
             textColor={textColor}
             textStyle={textStyle}
             fontFamily={font}

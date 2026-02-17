@@ -10,6 +10,7 @@ const coreEditions: HatConfig[] = [
     bandColor: '#DAA520',
     text: 'MAKE EARTH\nGREAT AGAIN',
     backText: '',
+    brimText: 'បង្កើតឡើងដើម្បីសន្តិភាព',
     font: 'Vinegar',
     textColor: '#FFD700',
     textStyle: 'gold-embroidery',
@@ -100,6 +101,7 @@ export default function CollectionPage() {
                     bandColor={hat.bandColor}
                     text={hat.text}
                     backText={hat.backText}
+                    brimText={hat.brimText}
                     textColor={hat.textColor}
                     textStyle={hat.textStyle}
                     font={hat.font}
@@ -145,6 +147,7 @@ export default function CollectionPage() {
                     bandColor={hat.bandColor}
                     text={hat.text}
                     backText={hat.backText}
+                    brimText={hat.brimText}
                     textColor={hat.textColor}
                     textStyle={hat.textStyle}
                     font={hat.font}

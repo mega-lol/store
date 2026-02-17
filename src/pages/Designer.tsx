@@ -76,6 +76,7 @@ export default function Designer() {
             texture={config.texture}
             text={config.text}
             backText={config.backText}
+            brimText={config.brimText}
             textColor={config.textColor}
             textStyle={config.textStyle}
             font={config.font}
