@@ -1,19 +1,6 @@
 name: Deploy to Hanzo K8s
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "src/**"
-      - "public/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "vite.config.ts"
-      - "index.html"
-      - "Dockerfile"
-      - "nginx.conf"
-      - "k8s/**"
-      - ".github/workflows/deploy-k8s.yml"
   workflow_dispatch:
     inputs:
       overlay:
