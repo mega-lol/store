@@ -92,9 +92,10 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
     return [euler.x, euler.y, euler.z];
   }, [decal.normal, spin]);
 
-  const size = Math.max(0.03, decal.scale?.[0] ?? 0.15);
-  const projectionDepth = Math.max(0.03, size * 0.42);
-  const decalScale: [number, number, number] = [size, size, projectionDepth];
+  const sizeX = Math.max(0.03, decal.scale?.[0] ?? 0.15);
+  const sizeY = Math.max(0.03, decal.scale?.[1] ?? sizeX);
+  const projectionDepth = Math.max(0.03, Math.max(sizeX, sizeY) * 0.42);
+  const decalScale: [number, number, number] = [sizeX, sizeY, projectionDepth];
 
   if (!targetMesh) return null;
   targetMeshRef.current = targetMesh;

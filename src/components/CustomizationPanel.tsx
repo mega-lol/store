@@ -825,15 +825,65 @@ export default function CustomizationPanel({
                   </div>
                 )}
 
+                {selectedDecal.type === 'image' && (
+                  <div className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className="w-full h-8 text-[10px] border-dashed border-white/20 text-white/60 hover:text-white"
+                      onClick={() => document.getElementById(`decal-img-${selectedDecal.id}`)?.click()}
+                    >
+                      <Upload className="h-3 w-3 mr-1.5" />
+                      {selectedDecal.url ? 'Replace Image' : 'Upload Image'}
+                    </Button>
+                    <input
+                      id={`decal-img-${selectedDecal.id}`}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = () => updateDecal(selectedDecal.id, { url: reader.result as string });
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <label className="text-[10px] text-white/40 uppercase">Scale</label>
                   <Slider
                     defaultValue={[selectedDecal.scale[0]]}
-                    min={0.05}
-                    max={0.5}
-                    step={0.01}
+                    min={0.03}
+                    max={0.6}
+                    step={0.005}
                     value={[selectedDecal.scale[0]]}
                     onValueChange={([val]) => updateDecal(selectedDecal.id, { scale: [val, val, val] })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/40 uppercase">Stretch X</label>
+                  <Slider
+                    defaultValue={[selectedDecal.scale[0]]}
+                    min={0.03}
+                    max={0.8}
+                    step={0.005}
+                    value={[selectedDecal.scale[0]]}
+                    onValueChange={([val]) => updateDecal(selectedDecal.id, { scale: [val, selectedDecal.scale[1], selectedDecal.scale[2]] })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] text-white/40 uppercase">Stretch Y</label>
+                  <Slider
+                    defaultValue={[selectedDecal.scale[1]]}
+                    min={0.03}
+                    max={0.8}
+                    step={0.005}
+                    value={[selectedDecal.scale[1]]}
+                    onValueChange={([val]) => updateDecal(selectedDecal.id, { scale: [selectedDecal.scale[0], val, selectedDecal.scale[2]] })}
                   />
                 </div>
 
@@ -843,7 +893,7 @@ export default function CustomizationPanel({
                     defaultValue={[selectedDecal.spin ?? selectedDecal.rotation[2] ?? 0]}
                     min={-Math.PI}
                     max={Math.PI}
-                    step={0.1}
+                    step={0.05}
                     value={[selectedDecal.spin ?? selectedDecal.rotation[2] ?? 0]}
                     onValueChange={([val]) => updateDecal(selectedDecal.id, { spin: val })}
                   />
