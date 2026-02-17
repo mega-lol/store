@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import HatScene from '@/components/HatScene';
 import { DEFAULT_HAT } from '@/types/hat';
+import { useCart, getHatPrice } from '@/store/cartStore';
+import { useToast } from '@/hooks/use-toast';
 
 const config = DEFAULT_HAT;
+const defaultPrice = getHatPrice(config);
 
 const TRANSLATIONS = [
   { text: 'Make Earth Great Again', lang: 'English' },
@@ -44,6 +47,16 @@ const TRANSLATIONS = [
 ];
 
 export default function Index() {
+  const navigate = useNavigate();
+  const { addItem } = useCart();
+  const { toast } = useToast();
+
+  const handlePreorder = () => {
+    addItem(config);
+    toast({ title: 'Added to cart', description: 'MEGA hat added to your cart.' });
+    navigate('/cart');
+  };
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [phase, setPhase] = useState<'in' | 'hold' | 'out'>('in');
 
@@ -126,9 +139,12 @@ export default function Index() {
         {/* Headline */}
         <div className="absolute top-20 left-6 md:left-12 z-10 max-w-xl animate-fade-up delay-300" style={{ opacity: 0 }}>
           <h1 className="text-5xl sm:text-6xl md:text-8xl lg:text-[7.5rem] font-black tracking-[-0.06em] leading-[0.84] text-white drop-shadow-[0_10px_45px_rgba(0,0,0,0.7)]">
-            MEGA<br />EARTH!
+            MAKE EARTH<br />GREAT AGAIN
           </h1>
-          <p className="mt-5 text-lg md:text-xl text-white/65 font-medium leading-snug max-w-md">
+          <p className="mt-4 text-[10px] md:text-[11px] tracking-[0.35em] uppercase text-white/55 font-black">
+            MEGA EARTH!
+          </p>
+          <p className="mt-3 text-lg md:text-xl text-white/65 font-medium leading-snug max-w-md">
             Make Earth Great — Together
           </p>
           <p className="mt-3 text-sm md:text-base text-white/45 leading-relaxed max-w-md">
@@ -140,15 +156,22 @@ export default function Index() {
         {/* CTA */}
         <div className="absolute bottom-12 left-6 md:left-12 z-10 animate-fade-up delay-500" style={{ opacity: 0 }}>
           <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={handlePreorder}
+              className="h-11 px-8 rounded-full bg-white text-black text-xs tracking-[0.2em] uppercase font-bold hover:bg-white/90 transition-colors shadow-[0_12px_44px_rgba(0,0,0,0.35)] flex items-center"
+            >
+              Pre-order ${defaultPrice.toFixed(0)}
+            </button>
             <Link
               to="/designer"
-              className="h-11 px-8 rounded-full bg-white text-black text-xs tracking-[0.2em] uppercase font-bold hover:bg-white/90 transition-colors shadow-[0_12px_44px_rgba(0,0,0,0.35)] flex items-center"
+              className="h-11 px-8 rounded-full border border-white/25 text-white text-xs tracking-[0.2em] uppercase font-bold hover:border-white/50 hover:bg-white/5 transition-colors flex items-center"
             >
               Design Your Own
             </Link>
             <a
               href="#movement"
-              className="h-11 px-6 rounded-full border border-white/25 text-white/75 text-xs tracking-[0.2em] uppercase hover:text-white hover:border-white/50 hover:bg-white/5 transition-colors flex items-center"
+              className="h-11 px-6 rounded-full border border-white/15 text-white/70 text-xs tracking-[0.2em] uppercase hover:text-white hover:border-white/35 hover:bg-white/5 transition-colors flex items-center"
             >
               Learn More
             </a>

@@ -281,15 +281,19 @@ export default function HatModel({
     hatTexture.colorSpace = THREE.SRGBColorSpace;
   }
 
-  const flagTextureUrl = flagCode ? `https://flagcdn.com/w80/${flagCode.toLowerCase()}.png` : TRANSPARENT_PIXEL;
+  const flagTextureUrl = flagCode ? `https://flagcdn.com/w160/${flagCode.toLowerCase()}.png` : TRANSPARENT_PIXEL;
   const flagTexture = useLoader(THREE.TextureLoader, flagTextureUrl);
 
   useEffect(() => {
     flagTexture.colorSpace = THREE.SRGBColorSpace;
     flagTexture.wrapS = THREE.ClampToEdgeWrapping;
     flagTexture.wrapT = THREE.ClampToEdgeWrapping;
+    flagTexture.generateMipmaps = true;
+    flagTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    flagTexture.magFilter = THREE.LinearFilter;
+    flagTexture.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
     flagTexture.needsUpdate = true;
-  }, [flagTexture]);
+  }, [flagTexture, gl]);
 
   useFrame((_, delta) => {
     if (autoRotate && groupRef.current) {
@@ -579,7 +583,9 @@ export default function HatModel({
 
   const frontTextScale: [number, number, number] = [mcSize.x * 0.82, mcSize.y * 0.48, Math.max(mcSize.z * 0.8, 0.14)];
   const backTextScale: [number, number, number] = [mcSize.x * 0.58, mcSize.y * 0.32, Math.max(mcSize.z * 0.5, 0.10)];
-  const flagScale: [number, number, number] = [mcSize.x * 0.22, mcSize.y * 0.14, Math.max(mcSize.z * 0.25, 0.06)];
+  const flagWidth = mcSize.x * 0.22;
+  const flagHeight = flagWidth * 0.75;
+  const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 0.06)];
 
   return (
     <group ref={groupRef} scale={displayScale}>
