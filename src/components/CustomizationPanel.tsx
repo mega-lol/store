@@ -421,16 +421,16 @@ export default function CustomizationPanel({
                   Black Base
                 </button>
                 <button
-                  onClick={() => setEdition('#FFFFFF', '#FFFFFF')}
+                  onClick={() => update({ hatColor: '#FFFFFF', bandColor: '#FFFFFF', textColor: '#FFFFFF', text: 'MAKE EARTH\nGREAT AGAIN', backText: 'MAKE EARTH\nGREAT AGAIN', textStyle: 'flat' as const })}
                   className="h-8 text-[10px] border border-white/20 text-white/80 hover:border-white/50"
                 >
-                  Whiteout ($80)
+                  Light MEGA ($80)
                 </button>
                 <button
-                  onClick={() => setEdition('#000000', '#000000')}
+                  onClick={() => update({ hatColor: '#000000', bandColor: '#000000', textColor: '#000000', text: 'MAKE EARTH\nGREAT AGAIN', backText: 'MAKE EARTH\nGREAT AGAIN', textStyle: 'flat' as const })}
                   className="h-8 text-[10px] border border-white/20 text-white/80 hover:border-white/50"
                 >
-                  Blackout ($80)
+                  Dark MEGA ($80)
                 </button>
               </div>
             </div>

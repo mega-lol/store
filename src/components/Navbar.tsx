@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X } from 'lucide-react';
-import { useCart } from '@/store/cartStore';
+import { Menu, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Navbar() {
-  const { totalItems } = useCart();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -119,35 +117,9 @@ export default function Navbar() {
                 Share
               </button>
 
-              <Link
-                to="/cart"
-                className={`relative p-2 rounded-full transition-colors ${
-                  pathname === '/cart' ? 'text-white bg-white/5' : 'text-white/60 hover:text-white hover:bg-white/5'
-                }`}
-                aria-label="Cart"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {totalItems > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold bg-white text-black">
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
             </div>
 
             <div className="flex md:hidden items-center gap-1">
-              <Link
-                to="/cart"
-                className="relative p-2 rounded-full text-white/70 hover:text-white transition-colors"
-                aria-label="Cart"
-              >
-                <ShoppingCart className="h-4 w-4" />
-                {totalItems > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] flex items-center justify-center font-bold bg-white text-black">
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
                 className="p-2 rounded-full text-white/80 hover:text-white transition-colors"
@@ -203,15 +175,6 @@ export default function Navbar() {
             >
               Share
             </button>
-            <Link
-              to="/cart"
-              onClick={() => setMobileOpen(false)}
-              className={`block px-4 py-3 rounded-xl text-sm tracking-[0.15em] uppercase transition-colors font-bold ${
-                pathname === '/cart' ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              Cart
-            </Link>
           </div>
         </div>
       )}
