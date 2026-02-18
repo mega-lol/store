@@ -777,13 +777,16 @@ export default function HatModel({
   const flagHeight = flagWidth * flagAspect;
   const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 0.06)];
 
-  // Brim text positioning - projected onto the bill/visor mesh
+  // Brim text positioning - projected onto the bill/visor mesh from above
   const brimTextPos: [number, number, number] = [
     billCenter.x,
-    billCenter.y + billSize.y * 0.15,
-    billCenter.z,
+    billCenter.y + billSize.y * 0.4,
+    billCenter.z + billSize.z * 0.05,
   ];
-  const brimTextScale: [number, number, number] = [billSize.x * 0.9, billSize.z * 0.45, Math.max(billSize.y * 2, 0.15)];
+  // Canvas is 2048x512 (4:1 aspect), scale accordingly on bill surface
+  const brimW = billSize.x * 0.85;
+  const brimH = brimW * 0.25;
+  const brimTextScale: [number, number, number] = [brimW, brimH, Math.max(billSize.y * 1.5, 20)];
 
   return (
     <group ref={groupRef} scale={displayScale}>
