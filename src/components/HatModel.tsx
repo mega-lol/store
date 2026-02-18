@@ -406,6 +406,7 @@ export default function HatModel({
   const modelRef = useRef<THREE.Group>(null);
   const mainCapMeshRef = useRef<THREE.Mesh>(null!);
   const mainCapDecalTargetRef = useRef<THREE.Mesh>(null!);
+  const billDecalTargetRef = useRef<THREE.Mesh>(null!);
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF(MODEL_PATH);
 
@@ -521,18 +522,50 @@ export default function HatModel({
     mainCapDecalTargetRef.current = mainCapDecalTarget;
   }
 
-  const { center, size, mcCenter, mcSize, mcFrontZ, mcBackZ } = useMemo(() => {
+  // Find the bill/visor mesh for brim text
+  const billMesh = useMemo(() => {
+    let target: THREE.Mesh | null = null;
+    capMesh.traverse((child) => {
+      if (!(child as THREE.Mesh).isMesh) return;
+      const mesh = child as THREE.Mesh;
+      if (!target && mesh.parent?.name === 'bill') {
+        target = mesh;
+      }
+    });
+    return target;
+  }, [capMesh]);
+
+  const billDecalTarget = useMemo(() => {
+    if (!billMesh) return null;
+    return (
+      decalTargetMeshMap.get(meshKey(billMesh.name, billMesh.parent?.name)) ||
+      decalTargetMeshMap.get(meshKey(billMesh.name, undefined)) ||
+      null
+    );
+  }, [billMesh, decalTargetMeshMap]);
+
+  if (billDecalTarget) {
+    billDecalTargetRef.current = billDecalTarget;
+  }
+
+  const { center, size, mcCenter, mcSize, mcFrontZ, mcBackZ, billCenter, billSize } = useMemo(() => {
     const box = new THREE.Box3().setFromObject(capMesh);
     let mc: THREE.Box3 = box;
+    let bl: THREE.Box3 | null = null;
 
     capMesh.traverse((child) => {
       if (child.name === 'mainCap') {
         mc = new THREE.Box3().setFromObject(child);
       }
+      if (child.name === 'bill') {
+        bl = new THREE.Box3().setFromObject(child);
+      }
     });
 
     const mcc = mc.getCenter(new THREE.Vector3());
     const mcs = mc.getSize(new THREE.Vector3());
+    const blc = bl ? (bl as THREE.Box3).getCenter(new THREE.Vector3()) : mcc;
+    const bls = bl ? (bl as THREE.Box3).getSize(new THREE.Vector3()) : mcs;
 
     return {
       center: box.getCenter(new THREE.Vector3()),
@@ -541,6 +574,8 @@ export default function HatModel({
       mcSize: mcs,
       mcFrontZ: mc.max.z,
       mcBackZ: mc.min.z,
+      billCenter: blc,
+      billSize: bls,
     };
   }, [capMesh]);
 
@@ -742,13 +777,13 @@ export default function HatModel({
   const flagHeight = flagWidth * flagAspect;
   const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 0.06)];
 
-  // Brim text positioning - on top of the visor/brim
+  // Brim text positioning - projected onto the bill/visor mesh
   const brimTextPos: [number, number, number] = [
-    mcCenter.x,
-    mcCenter.y - mcSize.y * 0.30,
-    mcFrontZ + mcSize.z * 0.22,
+    billCenter.x,
+    billCenter.y + billSize.y * 0.15,
+    billCenter.z,
   ];
-  const brimTextScale: [number, number, number] = [mcSize.x * 0.95, mcSize.y * 0.18, Math.max(mcSize.z * 0.6, 0.12)];
+  const brimTextScale: [number, number, number] = [billSize.x * 0.9, billSize.z * 0.45, Math.max(billSize.y * 2, 0.15)];
 
   return (
     <group ref={groupRef} scale={displayScale}>
@@ -827,11 +862,11 @@ export default function HatModel({
         )}
 
         {/* Brim text with laurel leaves */}
-        {mainCapDecalTarget && brimTexture && (
+        {billDecalTarget && brimTexture && (
           <ProjectedDecal
-            mesh={mainCapDecalTargetRef}
+            mesh={billDecalTargetRef}
             position={brimTextPos}
-            rotation={[-0.85, 0, 0]}
+            rotation={[-Math.PI / 2, 0, 0]}
             scale={brimTextScale}
           >
             <meshStandardMaterial
