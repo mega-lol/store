@@ -119,31 +119,44 @@ export const DEFAULT_DECALS: Decal[] = [
     zone: 'front',
     style: 'gold-embroidery',
   },
-  // Dove+panda patch – LEFT of back seam (per spec mockup)
+  // Dove – LEFT of back seam (3/5 scale per spec v2)
   {
-    id: 'default-bird-panda',
+    id: 'default-dove',
     type: 'image',
-    url: `${BASE_URL}images/bird_panda_embroidery.png`,
-    position: [-30, 48, -90],
+    url: `${BASE_URL}images/dove_decal.png`,
+    position: [-28, 48, -92],
     rotation: [0, Math.PI, 0],
-    scale: [55, 65, 55],
-    normal: [-0.2, 0.12, -1],
+    scale: [33, 39, 33],
+    normal: [-0.15, 0.12, -1],
     spin: Math.PI,
     zone: 'back',
     style: 'embroidery',
   },
-  // Earth/globe "7" patch – RIGHT SIDE of the cap, aligned to bottom edge
+  // Earth/globe "7" patch – RIGHT of back seam (3/5 scale per spec v2)
   {
     id: 'default-patch7',
     type: 'image',
     url: `${BASE_URL}images/patch7_decal.png`,
-    position: [90, 28, -22],
-    rotation: [0, Math.PI * 0.5, 0],
-    scale: [32, 38, 32],
-    normal: [1, 0.05, -0.15],
-    spin: 0,
-    zone: 'right',
+    position: [28, 48, -92],
+    rotation: [0, Math.PI, 0],
+    scale: [19, 23, 19],
+    normal: [0.15, 0.12, -1],
+    spin: Math.PI,
+    zone: 'back',
     style: 'embroidery',
+  },
+  // Inside label – "Out, Out, ..." with panda (inside band / woven tag area)
+  {
+    id: 'default-inside-label',
+    type: 'image',
+    url: `${BASE_URL}images/inside_label.png`,
+    position: [0, 20, 60],
+    rotation: [0, 0, 0],
+    scale: [55, 30, 55],
+    normal: [0, -1, 0.3],
+    spin: 0,
+    zone: 'inside',
+    style: 'flat',
   },
 ];
 
