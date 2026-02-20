@@ -23,6 +23,7 @@ export interface Decal {
   normal?: [number, number, number];
   spin?: number;
   zone?: PlacementZone;
+  style?: TextStyle;
   targetMeshName?: string;
   targetParentName?: string;
 }
@@ -105,7 +106,7 @@ export const PLACEMENT_ZONES: { value: PlacementZone; label: string }[] = [
 const BASE_URL = import.meta.env.BASE_URL || '/';
 
 export const DEFAULT_DECALS: Decal[] = [
-  // "MAKE EARTH GREAT AGAIN" front text – image decal on front of mainCap
+  // "MAKE EARTH GREAT AGAIN" front text – gold embroidery on front of mainCap
   {
     id: 'default-front-text',
     type: 'image',
@@ -116,6 +117,7 @@ export const DEFAULT_DECALS: Decal[] = [
     normal: [0, 0.15, 1],
     spin: 0,
     zone: 'front',
+    style: 'gold-embroidery',
   },
   // Dove+panda patch – LEFT of back seam (per spec mockup)
   {
@@ -128,6 +130,7 @@ export const DEFAULT_DECALS: Decal[] = [
     normal: [-0.2, 0.12, -1],
     spin: Math.PI,
     zone: 'back',
+    style: 'embroidery',
   },
   // Earth/globe "7" patch – RIGHT SIDE of the cap, aligned to bottom edge
   {
@@ -140,6 +143,7 @@ export const DEFAULT_DECALS: Decal[] = [
     normal: [1, 0.05, -0.15],
     spin: 0,
     zone: 'right',
+    style: 'embroidery',
   },
 ];
 
