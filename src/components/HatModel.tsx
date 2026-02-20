@@ -242,165 +242,7 @@ function makeTextTexture(
   return tex;
 }
 
-function drawLaurelBranch(
-  ctx: CanvasRenderingContext2D,
-  cx: number,
-  cy: number,
-  branchLen: number,
-  leafSize: number,
-  mirror: boolean,
-  color: string,
-) {
-  ctx.save();
-  const dir = mirror ? -1 : 1;
-
-  // Rich gold gradient for leaves
-  const leafGrad = ctx.createLinearGradient(cx - leafSize, cy - leafSize, cx + leafSize, cy + leafSize);
-  leafGrad.addColorStop(0, '#FFE850');
-  leafGrad.addColorStop(0.2, '#E8A000');
-  leafGrad.addColorStop(0.5, '#D4960A');
-  leafGrad.addColorStop(0.8, '#E8A000');
-  leafGrad.addColorStop(1, '#FFE850');
-
-  // Draw thick curved stem
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.quadraticCurveTo(
-    cx + dir * branchLen * 0.5, cy - branchLen * 0.12,
-    cx + dir * branchLen, cy - branchLen * 0.06,
-  );
-  ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(4, leafSize * 0.15);
-  ctx.globalAlpha = 0.9;
-  ctx.stroke();
-
-  // Draw many large leaves along the branch
-  const leafCount = 9;
-  for (let i = 0; i < leafCount; i++) {
-    const t = (i + 0.5) / leafCount;
-    // Position along branch curve
-    const bx = cx + dir * branchLen * t;
-    const by = cy - branchLen * 0.12 * Math.sin(t * Math.PI * 0.8);
-
-    // Alternating up/down leaves
-    const upDown = i % 2 === 0 ? -1 : 1;
-    const angle = dir * (-0.2 + t * 0.4) + upDown * 0.55;
-    const lSize = leafSize * (0.85 + (1 - t) * 0.4);
-
-    ctx.save();
-    ctx.translate(bx, by);
-    ctx.rotate(angle);
-
-    // Large pointed leaf shape
-    ctx.beginPath();
-    ctx.ellipse(0, 0, lSize * 0.4, lSize * 1.0, 0, 0, Math.PI * 2);
-    ctx.globalAlpha = 1.0;
-    ctx.fillStyle = leafGrad;
-    ctx.fill();
-
-    // Bold leaf outline
-    ctx.globalAlpha = 0.6;
-    ctx.strokeStyle = '#9B7018';
-    ctx.lineWidth = Math.max(2, lSize * 0.08);
-    ctx.stroke();
-
-    // Center vein
-    ctx.beginPath();
-    ctx.moveTo(0, -lSize * 0.8);
-    ctx.lineTo(0, lSize * 0.8);
-    ctx.globalAlpha = 0.4;
-    ctx.strokeStyle = '#9B7018';
-    ctx.lineWidth = Math.max(1.5, lSize * 0.06);
-    ctx.stroke();
-
-    ctx.restore();
-  }
-
-  ctx.restore();
-}
-
-function drawTextOnArc(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  cx: number,
-  cy: number,
-  radius: number,
-  fontSize: number,
-  textColor: string,
-  textStyle: TextStyle,
-  fontStack: string,
-) {
-  ctx.font = `900 ${fontSize}px ${fontStack}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  // Measure total text width to compute angular span
-  const totalWidth = ctx.measureText(text).width;
-  const totalAngle = totalWidth / radius;
-  const startAngle = Math.PI / 2 + totalAngle / 2; // start from left, centered
-
-  // Draw each character along the arc
-  let currentAngle = startAngle;
-  for (const char of text) {
-    const charWidth = ctx.measureText(char).width;
-    currentAngle -= charWidth / (2 * radius);
-
-    const x = cx + radius * Math.cos(currentAngle);
-    const y = cy - radius * Math.sin(currentAngle);
-    const rotation = -(currentAngle - Math.PI / 2);
-
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(rotation);
-
-    if (textStyle === 'gold-embroidery') {
-      drawGoldEmbroidery(ctx, char, 0, 0, fontSize);
-    } else if (textStyle === 'embroidery') {
-      drawEmbroideryStitch(ctx, char, 0, 0, fontSize, textColor);
-    } else if (textStyle === 'puff-3d') {
-      draw3DPuff(ctx, char, 0, 0, fontSize, textColor);
-    } else {
-      ctx.fillStyle = textColor;
-      ctx.fillText(char, 0, 0);
-    }
-
-    ctx.restore();
-    currentAngle -= charWidth / (2 * radius);
-  }
-
-  return { totalAngle, startAngle };
-}
-
-function makeLaurelTexture(
-  renderer: THREE.WebGLRenderer,
-): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = 2048;
-  c.height = 1024;
-  const ctx = c.getContext('2d')!;
-  ctx.clearRect(0, 0, c.width, c.height);
-
-  const cx = c.width * 0.5;
-  const cy = c.height * 0.48;
-  // Very large prominent branches spanning most of the brim width
-  const branchLen = c.width * 0.42;
-  const leafSize = 85;
-
-  // Left laurel branch - starts from center, extends to far left
-  drawLaurelBranch(ctx, cx, cy, branchLen, leafSize, true, '#B8860B');
-  // Right laurel branch - starts from center, extends to far right
-  drawLaurelBranch(ctx, cx, cy, branchLen, leafSize, false, '#B8860B');
-
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.flipY = true;
-  tex.generateMipmaps = true;
-  tex.minFilter = THREE.LinearMipmapLinearFilter;
-  tex.magFilter = THREE.LinearFilter;
-  tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-  tex.needsUpdate = true;
-  return tex;
-}
+/* Canvas arc/laurel helpers removed – using official goldleaf image assets */
 
 function meshKey(name?: string, parentName?: string): string {
   return `${parentName || ''}::${name || ''}`;
@@ -441,20 +283,24 @@ export default function HatModel({
     document.fonts.ready.then(() => setFontsReady(true));
   }, []);
 
-  // Load Khmer brim text image for direct projection onto bill
+  // Load brim image textures: laurels + Khmer text
+  const laurelBrimUrl = `${import.meta.env.BASE_URL}images/brim_laurels.png`;
   const khmerBrimUrl = `${import.meta.env.BASE_URL}images/khmer_brim_text.png`;
+  const laurelBrimTex = useLoader(THREE.TextureLoader, brimText ? laurelBrimUrl : TRANSPARENT_PIXEL);
   const khmerBrimTex = useLoader(THREE.TextureLoader, brimText ? khmerBrimUrl : TRANSPARENT_PIXEL);
   useEffect(() => {
     if (!brimText) return;
-    khmerBrimTex.colorSpace = THREE.SRGBColorSpace;
-    khmerBrimTex.wrapS = THREE.ClampToEdgeWrapping;
-    khmerBrimTex.wrapT = THREE.ClampToEdgeWrapping;
-    khmerBrimTex.generateMipmaps = true;
-    khmerBrimTex.minFilter = THREE.LinearMipmapLinearFilter;
-    khmerBrimTex.magFilter = THREE.LinearFilter;
-    khmerBrimTex.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
-    khmerBrimTex.needsUpdate = true;
-  }, [khmerBrimTex, gl, brimText]);
+    for (const tex of [laurelBrimTex, khmerBrimTex]) {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
+      tex.needsUpdate = true;
+    }
+  }, [laurelBrimTex, khmerBrimTex, gl, brimText]);
 
   const useFabricTexture = Boolean(fabricCanvas);
   const hasCustomTexture = Boolean(texture);
@@ -647,11 +493,7 @@ export default function HatModel({
     return makeTextTexture(lines, textColor, gl, fontFamily, textStyle);
   }, [backText, textColor, gl, fontFamily, textStyle, fontsReady]);
 
-  // Brim laurel leaves overlay (Khmer text is a separate image decal)
-  const brimTexture = useMemo(() => {
-    if (!brimText) return null;
-    return makeLaurelTexture(gl);
-  }, [brimText, gl]);
+  // Brim laurel leaves overlay – loaded from image, no canvas needed
 
   // Dispose textures on change/unmount
   useEffect(() => {
@@ -662,9 +504,7 @@ export default function HatModel({
     return () => { backTexture?.dispose(); };
   }, [backTexture]);
 
-  useEffect(() => {
-    return () => { brimTexture?.dispose(); };
-  }, [brimTexture]);
+  // laurelBrimTex and khmerBrimTex are managed by useLoader – no manual dispose needed
 
   useEffect(() => {
     capMesh.traverse((child) => {
@@ -915,8 +755,8 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
-        {/* Gold laurel leaves on brim - project DOWNWARD onto bill top surface */}
-        {billDecalTarget && brimTexture && (
+        {/* Gold laurel leaves on brim - official embroidered goldleaf image */}
+        {billDecalTarget && brimText && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
             position={brimTextPos}
@@ -924,7 +764,7 @@ export default function HatModel({
             scale={brimTextScale}
           >
             <meshStandardMaterial
-              map={brimTexture}
+              map={laurelBrimTex}
               transparent
               alphaTest={0.06}
               depthTest

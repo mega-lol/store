@@ -117,14 +117,14 @@ export const DEFAULT_DECALS: Decal[] = [
     spin: 0,
     zone: 'front',
   },
-  // Dove+panda patch – centered on the BACK of the cap
+  // Dove+panda patch – centered on the BACK of the cap (larger, higher)
   {
     id: 'default-bird-panda',
     type: 'image',
     url: `${BASE_URL}images/bird_panda_embroidery.png`,
-    position: [0, 48, -93],
+    position: [0, 55, -93],
     rotation: [0, Math.PI, 0],
-    scale: [60, 40, 60],
+    scale: [75, 50, 75],
     normal: [0, 0.12, -1],
     spin: Math.PI,
     zone: 'back',
