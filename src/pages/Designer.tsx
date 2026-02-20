@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import HatScene from '@/components/HatScene';
+import { CAMERA_PRESETS } from '@/components/HatScene';
 import CustomizationPanel from '@/components/CustomizationPanel';
 import { DEFAULT_HAT, HatConfig, Decal } from '@/types/hat';
 import { applySiteFont, ensureFontLoaded } from '@/lib/fonts';
@@ -12,6 +13,8 @@ export default function Designer() {
   const [selectedDecalId, setSelectedDecalId] = useState<string | null>(null);
   const [placementMode, setPlacementMode] = useState(false);
   const [editingOnSurface, setEditingOnSurface] = useState(false);
+  const [cameraPreset, setCameraPreset] = useState(-1);
+  const [presetTrigger, setPresetTrigger] = useState(0);
 
   // Preview mode disables Fabric.js (used for screenshots/SSR/headless captures)
   const isPreviewMode = typeof window !== 'undefined' &&
@@ -94,8 +97,27 @@ export default function Designer() {
             fabricCanvas={isPreviewMode ? null : fabric.canvas}
             editingOnSurface={editingOnSurface}
             onEditingSurface={isPreviewMode ? undefined : setEditingOnSurface}
+            cameraPreset={cameraPreset}
+            cameraPresetTrigger={presetTrigger}
             className="w-full h-full"
           />
+          {/* Camera angle preset buttons */}
+          <div className="absolute bottom-3 left-3 z-10 flex flex-wrap gap-1 max-w-[280px]">
+            {CAMERA_PRESETS.map((preset, i) => (
+              <button
+                key={preset.label}
+                onClick={() => { setCameraPreset(i); setPresetTrigger(t => t + 1); }}
+                className={`px-2 py-1 text-[9px] uppercase tracking-wider rounded border transition-colors ${
+                  cameraPreset === i
+                    ? 'border-yellow-400/60 bg-yellow-400/15 text-yellow-300'
+                    : 'border-white/15 bg-black/60 text-white/60 hover:text-white/90 hover:border-white/30'
+                }`}
+                title={preset.label}
+              >
+                {preset.shortLabel}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Panel */}

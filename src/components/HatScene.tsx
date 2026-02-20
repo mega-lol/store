@@ -1,11 +1,69 @@
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, ContactShadows, Environment } from '@react-three/drei';
 import { Canvas as FabricCanvas } from 'fabric';
 import HatModel from './HatModel';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import * as THREE from 'three';
 
 import { Decal, TextStyle } from '@/types/hat';
+
+// Camera presets: spherical positions around target [0, 0.08, 0] at distance 2.8
+const R = 2.8;
+const TARGET: [number, number, number] = [0, 0.08, 0];
+
+export interface CameraPreset {
+  label: string;
+  shortLabel: string;
+  position: [number, number, number];
+}
+
+export const CAMERA_PRESETS: CameraPreset[] = [
+  { label: 'Front', shortLabel: 'F', position: [0, 0.2, R] },
+  { label: 'Back', shortLabel: 'B', position: [0, 0.2, -R] },
+  { label: 'Right', shortLabel: 'R', position: [-R, 0.2, 0] },
+  { label: '3/4 Right', shortLabel: '¾R', position: [-R * 0.707, 0.2, -R * 0.707] },
+  { label: '3/4 Left', shortLabel: '¾L', position: [R * 0.707, 0.2, R * 0.707] },
+  { label: 'Left', shortLabel: 'L', position: [R, 0.2, 0] },
+  { label: 'Under Brim', shortLabel: 'UB', position: [0, -R * 0.5, R * 0.866] },
+  { label: 'Top Down', shortLabel: 'TD', position: [0, R * 0.866, R * 0.5] },
+];
+
+export interface HatSceneRef {
+  setCameraPreset: (index: number) => void;
+}
+
+function CameraController({ presetIndex, trigger }: { presetIndex: number; trigger: number }) {
+  const { camera } = useThree();
+
+  useEffect(() => {
+    if (presetIndex < 0 || trigger === 0) return;
+
+    const preset = CAMERA_PRESETS[presetIndex];
+    if (!preset) return;
+
+    const start = camera.position.clone();
+    const end = new THREE.Vector3(...preset.position);
+    const duration = 500;
+    const startTime = performance.now();
+
+    let raf: number;
+    function animate() {
+      const elapsed = performance.now() - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - t, 3);
+      camera.position.lerpVectors(start, end, ease);
+      camera.lookAt(...TARGET);
+
+      if (t < 1) {
+        raf = requestAnimationFrame(animate);
+      }
+    }
+    animate();
+    return () => cancelAnimationFrame(raf);
+  }, [presetIndex, trigger, camera]);
+
+  return null;
+}
 
 interface HatSceneProps {
   hatColor: string;
@@ -29,6 +87,8 @@ interface HatSceneProps {
   fabricCanvas?: FabricCanvas | null;
   editingOnSurface?: boolean;
   onEditingSurface?: (editing: boolean) => void;
+  cameraPreset?: number;
+  cameraPresetTrigger?: number;
 }
 
 function Lights() {
@@ -70,6 +130,8 @@ export default function HatScene({
   fabricCanvas,
   editingOnSurface = false,
   onEditingSurface,
+  cameraPreset = -1,
+  cameraPresetTrigger = 0,
 }: HatSceneProps) {
   return (
     <div className={`relative ${className || ''}`}>
@@ -110,6 +172,7 @@ export default function HatScene({
             fabricCanvas={fabricCanvas}
             onEditingSurface={onEditingSurface}
           />
+          <CameraController presetIndex={cameraPreset} trigger={cameraPresetTrigger} />
           <ContactShadows
             position={[0, -0.52, 0]}
             opacity={0.25}
