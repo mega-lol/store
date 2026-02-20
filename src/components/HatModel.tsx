@@ -667,13 +667,15 @@ export default function HatModel({
   const flagHeight = flagWidth * flagAspect;
   const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 25)];
 
-  // Brim leaf positioning - two separate leaves projected DOWNWARD onto bill/visor
-  const leafY = billCenter.y - billSize.y * 0.15;
-  const leafZ = billCenter.z + billSize.z * 0.15;
-  const leafW = billSize.x * 0.42;
-  const leafH = leafW * 1.2;
-  const leafDepth = Math.max(billSize.y * 2.0, 120);
-  const leafSpread = billSize.x * 0.30;
+  // Brim leaf positioning - two large leaves projected DOWNWARD onto bill/visor
+  // Each leaf arcs outward to frame the Khmer text like a laurel wreath
+  const leafY = billCenter.y - billSize.y * 0.08;
+  const leafZ = billCenter.z + billSize.z * 0.18;
+  const leafW = billSize.x * 0.58;
+  const leafH = leafW * 1.5;
+  // Shallow depth so projection hits ONLY the top surface, not bleeding through to underside
+  const leafDepth = Math.max(billSize.y * 0.6, 35);
+  const leafSpread = billSize.x * 0.26;
   const leafLeftPos: [number, number, number] = [billCenter.x - leafSpread, leafY, leafZ];
   const leafRightPos: [number, number, number] = [billCenter.x + leafSpread, leafY, leafZ];
   const leafScale: [number, number, number] = [leafW, leafH, leafDepth];
@@ -756,12 +758,12 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
-        {/* Left gold laurel leaf on brim */}
+        {/* Left gold laurel leaf on brim - tilted to arc outward */}
         {billDecalTarget && brimText && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
             position={leafLeftPos}
-            rotation={[Math.PI / 2, 0, 0]}
+            rotation={[Math.PI / 2, 0, 0.3]}
             scale={leafScale}
           >
             <meshStandardMaterial
@@ -782,12 +784,12 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
-        {/* Right gold laurel leaf on brim */}
+        {/* Right gold laurel leaf on brim - tilted to arc outward (mirrored) */}
         {billDecalTarget && brimText && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
             position={leafRightPos}
-            rotation={[Math.PI / 2, 0, 0]}
+            rotation={[Math.PI / 2, 0, -0.3]}
             scale={leafScale}
           >
             <meshStandardMaterial
@@ -812,9 +814,9 @@ export default function HatModel({
         {billDecalTarget && brimText && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
-            position={[billCenter.x, billCenter.y - billSize.y * 0.1, billCenter.z + billSize.z * 0.22]}
+            position={[billCenter.x, billCenter.y - billSize.y * 0.06, billCenter.z + billSize.z * 0.22]}
             rotation={[Math.PI / 2, 0, 0]}
-            scale={[billSize.x * 0.7, billSize.x * 0.15, Math.max(billSize.y * 2.5, 180)]}
+            scale={[billSize.x * 0.8, billSize.x * 0.18, Math.max(billSize.y * 0.6, 35)]}
           >
             <meshStandardMaterial
               map={khmerBrimTex}

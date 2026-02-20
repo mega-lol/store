@@ -119,28 +119,28 @@ export const DEFAULT_DECALS: Decal[] = [
     zone: 'front',
     style: 'gold-embroidery',
   },
-  // Dove – LEFT of back seam (3/5 scale per spec v2)
+  // Dove – RIGHT of back seam (viewed from behind), smaller, aligned lower-right
   {
     id: 'default-dove',
     type: 'image',
     url: `${BASE_URL}images/dove_decal.png`,
-    position: [-28, 48, -92],
+    position: [-35, 38, -90],
     rotation: [0, Math.PI, 0],
-    scale: [33, 39, 33],
-    normal: [-0.15, 0.12, -1],
+    scale: [22, 26, 22],
+    normal: [-0.1, 0.05, -1],
     spin: Math.PI,
     zone: 'back',
     style: 'embroidery',
   },
-  // Earth/globe "7" patch – RIGHT of back seam (3/5 scale per spec v2)
+  // Earth/globe "7" patch – LEFT of back seam (viewed from behind), smaller, flat projection
   {
     id: 'default-patch7',
     type: 'image',
     url: `${BASE_URL}images/patch7_decal.png`,
-    position: [28, 48, -92],
+    position: [30, 40, -90],
     rotation: [0, Math.PI, 0],
-    scale: [19, 23, 19],
-    normal: [0.15, 0.12, -1],
+    scale: [14, 17, 14],
+    normal: [0.08, 0.05, -1],
     spin: Math.PI,
     zone: 'back',
     style: 'embroidery',
