@@ -101,16 +101,16 @@ export default function Designer() {
             cameraPresetTrigger={presetTrigger}
             className="w-full h-full"
           />
-          {/* Camera angle preset buttons */}
-          <div className="absolute bottom-3 left-3 z-10 flex flex-wrap gap-1 max-w-[280px]">
+          {/* Camera angle preset pill bar */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-0 rounded-full border border-white/10 bg-black/70 backdrop-blur-sm p-0.5">
             {CAMERA_PRESETS.map((preset, i) => (
               <button
                 key={preset.label}
                 onClick={() => { setCameraPreset(i); setPresetTrigger(t => t + 1); }}
-                className={`px-2 py-1 text-[9px] uppercase tracking-wider rounded border transition-colors ${
+                className={`px-2.5 py-1 text-[9px] uppercase tracking-wider rounded-full transition-all ${
                   cameraPreset === i
-                    ? 'border-yellow-400/60 bg-yellow-400/15 text-yellow-300'
-                    : 'border-white/15 bg-black/60 text-white/60 hover:text-white/90 hover:border-white/30'
+                    ? 'bg-white/15 text-yellow-300 shadow-sm'
+                    : 'text-white/45 hover:text-white/80 hover:bg-white/5'
                 }`}
                 title={preset.label}
               >
