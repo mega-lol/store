@@ -642,7 +642,7 @@ export default function HatModel({
     }
   };
 
-  const textY = mcCenter.y + mcSize.y * 0.08;
+  const textY = mcCenter.y + mcSize.y * 0.14;
   const frontTextPos: [number, number, number] = [mcCenter.x, textY, mcFrontZ + mcSize.z * 0.012];
   const backTextPos: [number, number, number] = [mcCenter.x, textY - mcSize.y * 0.03, mcBackZ - mcSize.z * 0.008];
   const rightFlagPos: [number, number, number] = [
@@ -666,16 +666,16 @@ export default function HatModel({
   const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 25)];
 
   // Brim laurel positioning - projected DOWNWARD onto the bill/visor top surface
-  // Position at bill center; projection depth must fully encompass bill thickness
+  // Position shifted forward and down to keep leaves ON the brim (not crown)
   const brimTextPos: [number, number, number] = [
     billCenter.x,
-    billCenter.y,
-    billCenter.z + billSize.z * 0.08,
+    billCenter.y - billSize.y * 0.15,
+    billCenter.z + billSize.z * 0.15,
   ];
-  // Full brim coverage for prominent laurels (matching spec)
-  const brimW = billSize.x * 1.1;
-  const brimH = brimW * 0.5;
-  const brimTextScale: [number, number, number] = [brimW, brimH, Math.max(billSize.y * 2.5, 150)];
+  // Sized to fit brim width, shorter height to stay on brim surface
+  const brimW = billSize.x * 1.05;
+  const brimH = brimW * 0.45;
+  const brimTextScale: [number, number, number] = [brimW, brimH, Math.max(billSize.y * 2.0, 120)];
 
   return (
     <group ref={groupRef} scale={displayScale}>
@@ -785,9 +785,9 @@ export default function HatModel({
         {billDecalTarget && brimText && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
-            position={[billCenter.x, billCenter.y, billCenter.z + billSize.z * 0.18]}
+            position={[billCenter.x, billCenter.y - billSize.y * 0.1, billCenter.z + billSize.z * 0.22]}
             rotation={[Math.PI / 2, 0, 0]}
-            scale={[billSize.x * 0.75, billSize.x * 0.2, Math.max(billSize.y * 3, 200)]}
+            scale={[billSize.x * 0.7, billSize.x * 0.15, Math.max(billSize.y * 2.5, 180)]}
           >
             <meshStandardMaterial
               map={khmerBrimTex}
