@@ -674,7 +674,7 @@ export default function HatModel({
   const leafZ = billCenter.z + billSize.z * 0.14;
   const leafW = billSize.x * 0.66;
   const leafH = leafW * 0.82;
-  const leafDepth = Math.max(billSize.y * 0.22, 18);
+  const leafDepth = Math.max(billSize.y * 0.15, 12);
   const leafSpread = billSize.x * 0.30;
   const leafLeftPos: [number, number, number] = [billCenter.x - leafSpread, leafY, leafZ];
   const leafRightPos: [number, number, number] = [billCenter.x + leafSpread, leafY, leafZ];
@@ -816,7 +816,7 @@ export default function HatModel({
             mesh={billDecalTargetRef}
             position={[billCenter.x, billCenter.y + billSize.y * 0.10, billCenter.z + billSize.z * 0.22]}
             rotation={brimProjectionRot}
-            scale={[billSize.x * 0.62, billSize.x * 0.18, Math.max(billSize.y * 0.22, 18)]}
+            scale={[billSize.x * 0.62, billSize.x * 0.18, Math.max(billSize.y * 0.15, 12)]}
           >
             <meshStandardMaterial
               map={khmerBrimTex}
