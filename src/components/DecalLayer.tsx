@@ -164,7 +164,7 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
       <meshStandardMaterial
         map={activeTexture}
         bumpMap={bumpTexture}
-        bumpScale={1.8}
+        bumpScale={2.5}
         transparent
         alphaTest={0.06}
         depthTest
@@ -173,10 +173,10 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
         polygonOffset
         polygonOffsetFactor={isSelected ? -4 : -3}
         polygonOffsetUnits={isSelected ? -4 : -3}
-        roughness={0.75}
-        metalness={0.04}
-        emissive={isSelected ? '#1f1f1f' : '#000000'}
-        emissiveIntensity={isSelected ? 0.3 : 0}
+        roughness={0.55}
+        metalness={0.35}
+        emissive={isSelected ? '#1f1f1f' : '#3D2200'}
+        emissiveIntensity={isSelected ? 0.3 : 0.12}
       />
     </ProjectedDecal>
   );
