@@ -119,33 +119,46 @@ export const DEFAULT_DECALS: Decal[] = [
     zone: 'front',
     style: 'gold-embroidery',
   },
-  // Dove – RIGHT of back seam (viewed from behind), lower-right
+  // Dove – back LEFT (viewer's left when looking at back = model -X)
   {
     id: 'default-dove',
     type: 'image',
     url: `${BASE_URL}images/dove_decal.png`,
-    position: [-30, 42, -85],
+    position: [-28, 42, -85],
     rotation: [0, Math.PI, 0],
-    scale: [25, 30, 55],
-    normal: [-0.12, 0.1, -1],
+    scale: [28, 33, 55],
+    normal: [-0.12, 0.08, -1],
     spin: Math.PI,
     zone: 'back',
     style: 'embroidery',
   },
-  // Earth/globe "7" patch – LEFT of back seam (viewed from behind)
+  // Panda – back RIGHT (viewer's right when looking at back = model +X)
+  {
+    id: 'default-panda',
+    type: 'image',
+    url: `${BASE_URL}images/panda_decal.png`,
+    position: [28, 40, -85],
+    rotation: [0, Math.PI, 0],
+    scale: [26, 31, 55],
+    normal: [0.12, 0.08, -1],
+    spin: Math.PI,
+    zone: 'back',
+    style: 'embroidery',
+  },
+  // Earth/globe "7" patch – RIGHT SIDE of hat (sewn-on patch look)
   {
     id: 'default-patch7',
     type: 'image',
     url: `${BASE_URL}images/patch7_decal.png`,
-    position: [26, 42, -85],
-    rotation: [0, Math.PI, 0],
-    scale: [16, 19, 45],
-    normal: [0.1, 0.1, -1],
-    spin: Math.PI,
-    zone: 'back',
+    position: [88, 38, -25],
+    rotation: [0, 0, 0],
+    scale: [22, 26, 50],
+    normal: [1, 0.05, -0.15],
+    spin: 0,
+    zone: 'right',
     style: 'embroidery',
   },
-  // Inside label – "Out, Out, ..." with panda (inside band / woven tag area)
+  // Inside label – "Out, Out, ..." (inside band / woven tag area)
   {
     id: 'default-inside-label',
     type: 'image',
