@@ -671,11 +671,11 @@ export default function HatModel({
   const brimProjectionRot: [number, number, number] = [Math.PI / 2 - 0.18, 0, 0];
   // Leaf positioning: LARGE laurel branches spanning most of the brim (per spec)
   const leafY = billCenter.y + billSize.y * 0.10;
-  const leafZ = billCenter.z + billSize.z * 0.12;
-  const leafW = billSize.x * 0.60;
-  const leafH = leafW * 0.80;
-  const leafDepth = Math.max(billSize.y * 0.32, 24);
-  const leafSpread = billSize.x * 0.24;
+  const leafZ = billCenter.z + billSize.z * 0.14;
+  const leafW = billSize.x * 0.66;
+  const leafH = leafW * 0.82;
+  const leafDepth = Math.max(billSize.y * 0.22, 18);
+  const leafSpread = billSize.x * 0.30;
   const leafLeftPos: [number, number, number] = [billCenter.x - leafSpread, leafY, leafZ];
   const leafRightPos: [number, number, number] = [billCenter.x + leafSpread, leafY, leafZ];
   const leafScale: [number, number, number] = [leafW, leafH, leafDepth];
@@ -814,9 +814,9 @@ export default function HatModel({
         {billDecalTarget && brimText && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
-            position={[billCenter.x, billCenter.y + billSize.y * 0.10, billCenter.z + billSize.z * 0.18]}
+            position={[billCenter.x, billCenter.y + billSize.y * 0.10, billCenter.z + billSize.z * 0.22]}
             rotation={brimProjectionRot}
-            scale={[billSize.x * 0.52, billSize.x * 0.15, Math.max(billSize.y * 0.32, 24)]}
+            scale={[billSize.x * 0.62, billSize.x * 0.18, Math.max(billSize.y * 0.22, 18)]}
           >
             <meshStandardMaterial
               map={khmerBrimTex}

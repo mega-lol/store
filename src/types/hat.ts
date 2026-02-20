@@ -126,7 +126,7 @@ export const DEFAULT_DECALS: Decal[] = [
     url: `${BASE_URL}images/dove_decal.png`,
     position: [-24, 36, -87],
     rotation: [0, Math.PI, 0],
-    scale: [34, 40, 58],
+    scale: [38, 44, 60],
     normal: [-0.10, 0.05, -1],
     spin: Math.PI,
     zone: 'back',
