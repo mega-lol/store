@@ -669,13 +669,14 @@ export default function HatModel({
 
   // Brim leaf positioning - two large leaves projected DOWNWARD onto bill/visor
   // Each leaf arcs outward to frame the Khmer text like a laurel wreath
-  const leafY = billCenter.y - billSize.y * 0.08;
-  const leafZ = billCenter.z + billSize.z * 0.12;
-  const leafW = billSize.x * 0.45;
-  const leafH = leafW * 1.4;
-  // Shallow depth so projection hits ONLY the top surface, not bleeding through to underside
-  const leafDepth = Math.max(billSize.y * 0.6, 35);
-  const leafSpread = billSize.x * 0.35;
+  const leafY = billCenter.y - billSize.y * 0.06;
+  const leafZ = billCenter.z + billSize.z * 0.10;
+  const leafW = billSize.x * 0.38;
+  const leafH = leafW * 1.3;
+  // Shallow depth: only top surface, no bleed-through to underside
+  const leafDepth = Math.max(billSize.y * 0.5, 30);
+  // Push leaves far to edges so they frame Khmer text without overlapping
+  const leafSpread = billSize.x * 0.38;
   const leafLeftPos: [number, number, number] = [billCenter.x - leafSpread, leafY, leafZ];
   const leafRightPos: [number, number, number] = [billCenter.x + leafSpread, leafY, leafZ];
   const leafScale: [number, number, number] = [leafW, leafH, leafDepth];
@@ -763,7 +764,7 @@ export default function HatModel({
           <ProjectedDecal
             mesh={billDecalTargetRef}
             position={leafLeftPos}
-            rotation={[Math.PI / 2, 0, Math.PI + 0.2]}
+            rotation={[Math.PI / 2, 0, 0.25]}
             scale={leafScale}
           >
             <meshStandardMaterial
@@ -784,12 +785,12 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
-        {/* Right gold laurel leaf on brim - flipped right-side up, tilted outward */}
+        {/* Right gold laurel leaf on brim - mirrored tilt */}
         {billDecalTarget && brimText && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
             position={leafRightPos}
-            rotation={[Math.PI / 2, 0, Math.PI - 0.2]}
+            rotation={[Math.PI / 2, 0, -0.25]}
             scale={leafScale}
           >
             <meshStandardMaterial
