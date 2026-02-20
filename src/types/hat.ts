@@ -119,28 +119,28 @@ export const DEFAULT_DECALS: Decal[] = [
     zone: 'front',
     style: 'gold-embroidery',
   },
-  // Dove – back LEFT panel, just above snapback opening
+  // Dove – back LEFT panel, just above snapback opening (Y=36 aligned with patch7)
   {
     id: 'default-dove',
     type: 'image',
     url: `${BASE_URL}images/dove_decal.png`,
-    position: [-22, 38, -88],
+    position: [-24, 36, -87],
     rotation: [0, Math.PI, 0],
-    scale: [30, 36, 55],
-    normal: [-0.08, 0.05, -1],
+    scale: [34, 40, 58],
+    normal: [-0.10, 0.05, -1],
     spin: Math.PI,
     zone: 'back',
     style: 'embroidery',
   },
-  // Earth/globe "7" patch – RIGHT SIDE of hat (sewn-on patch look)
+  // Earth/globe "7" patch – RIGHT SIDE of hat (Y=36 aligned with dove)
   {
     id: 'default-patch7',
     type: 'image',
     url: `${BASE_URL}images/patch7_decal.png`,
-    position: [88, 36, -18],
+    position: [87, 36, -16],
     rotation: [0, 0, 0],
-    scale: [28, 32, 50],
-    normal: [1, 0.05, -0.12],
+    scale: [30, 34, 52],
+    normal: [1, 0.05, -0.10],
     spin: 0,
     zone: 'right',
     style: 'embroidery',
