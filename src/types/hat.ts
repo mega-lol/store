@@ -119,30 +119,30 @@ export const DEFAULT_DECALS: Decal[] = [
     zone: 'front',
     style: 'gold-embroidery',
   },
-  // Dove – back LEFT panel, just above snapback opening (Y=36 aligned with patch7)
+  // Dove – back LEFT panel, just above snapback opening
   {
     id: 'default-dove',
     type: 'image',
     url: `${BASE_URL}images/dove_decal.png`,
-    position: [-24, 36, -87],
+    position: [-26, 28, -88],
     rotation: [0, Math.PI, 0],
-    scale: [38, 44, 60],
-    normal: [-0.10, 0.05, -1],
+    scale: [34, 34, 50],
+    normal: [0, 0, -1],
     spin: Math.PI,
     zone: 'back',
     style: 'embroidery',
   },
-  // Earth/globe "7" patch – RIGHT SIDE of hat (Y=36 aligned with dove)
+  // Earth/globe "7" patch – back RIGHT panel, same height/size as dove
   {
     id: 'default-patch7',
     type: 'image',
     url: `${BASE_URL}images/patch7_decal.png`,
-    position: [87, 36, -16],
-    rotation: [0, 0, 0],
-    scale: [30, 34, 52],
-    normal: [1, 0.05, -0.10],
-    spin: 0,
-    zone: 'right',
+    position: [26, 28, -88],
+    rotation: [0, Math.PI, 0],
+    scale: [34, 34, 50],
+    normal: [0, 0, -1],
+    spin: Math.PI,
+    zone: 'back',
     style: 'embroidery',
   },
   // Panda on inside label – "Out, Out, ..." (inside band / woven tag area)
