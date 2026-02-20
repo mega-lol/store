@@ -64,10 +64,57 @@ function useTextTexture(text: string, color: string, font: string) {
   return texture;
 }
 
+/** Generate a grayscale bump texture from a color texture for embroidered/raised look */
+function useBumpFromTexture(sourceTexture: THREE.Texture): THREE.CanvasTexture | null {
+  const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'));
+  const bumpTex = useMemo(() => {
+    const t = new THREE.CanvasTexture(canvasRef.current);
+    t.colorSpace = THREE.LinearSRGBColorSpace;
+    return t;
+  }, []);
+
+  useEffect(() => {
+    const img = sourceTexture.image as HTMLImageElement | HTMLCanvasElement | undefined;
+    if (!img || !(img instanceof HTMLImageElement ? img.complete && img.naturalWidth > 0 : true)) return;
+
+    const w = (img as HTMLImageElement).naturalWidth || (img as HTMLCanvasElement).width || 256;
+    const h = (img as HTMLImageElement).naturalHeight || (img as HTMLCanvasElement).height || 256;
+
+    const canvas = canvasRef.current;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(img, 0, 0, w, h);
+    const data = ctx.getImageData(0, 0, w, h);
+    const px = data.data;
+
+    // Convert to grayscale bump: opaque pixels = raised, transparent = flat
+    for (let i = 0; i < px.length; i += 4) {
+      const alpha = px[i + 3] / 255;
+      // Luminance-weighted grayscale, boosted by alpha
+      const lum = (px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114) / 255;
+      const bump = Math.min(255, Math.floor(alpha * (0.5 + lum * 0.5) * 255));
+      px[i] = bump;
+      px[i + 1] = bump;
+      px[i + 2] = bump;
+      px[i + 3] = 255;
+    }
+
+    ctx.putImageData(data, 0, 0);
+    bumpTex.needsUpdate = true;
+  }, [sourceTexture, bumpTex]);
+
+  return bumpTex;
+}
+
 export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: DecalLayerProps) {
   const targetMeshRef = useRef<THREE.Mesh>(null!);
   const imageTexture = useTexture(decal.type === 'image' && decal.url ? decal.url : TRANSPARENT_PIXEL);
   const textTexture = useTextTexture(decal.text || '', decal.color || '#ffffff', decal.font || 'Vinegar');
+  const activeTexture = decal.type === 'image' ? imageTexture : textTexture;
+  const bumpTexture = useBumpFromTexture(activeTexture);
 
   useEffect(() => {
     imageTexture.colorSpace = THREE.SRGBColorSpace;
@@ -94,7 +141,10 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
 
   const sizeX = Math.max(0.03, decal.scale?.[0] ?? 0.15);
   const sizeY = Math.max(0.03, decal.scale?.[1] ?? sizeX);
-  const projectionDepth = Math.max(0.03, Math.max(sizeX, sizeY) * 0.42);
+  // Use explicit Z scale if provided, otherwise derive from X/Y
+  const projectionDepth = decal.scale?.[2] != null
+    ? Math.max(0.03, decal.scale[2])
+    : Math.max(0.03, Math.max(sizeX, sizeY) * 0.6);
   const decalScale: [number, number, number] = [sizeX, sizeY, projectionDepth];
 
   if (!targetMesh) return null;
@@ -112,16 +162,19 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
       }}
     >
       <meshStandardMaterial
-        map={decal.type === 'image' ? imageTexture : textTexture}
+        map={activeTexture}
+        bumpMap={bumpTexture}
+        bumpScale={1.8}
         transparent
         alphaTest={0.06}
         depthTest
         depthWrite={false}
+        side={THREE.FrontSide}
         polygonOffset
         polygonOffsetFactor={isSelected ? -4 : -3}
         polygonOffsetUnits={isSelected ? -4 : -3}
-        roughness={0.6}
-        metalness={0.02}
+        roughness={0.75}
+        metalness={0.04}
         emissive={isSelected ? '#1f1f1f' : '#000000'}
         emissiveIntensity={isSelected ? 0.3 : 0}
       />

@@ -64,6 +64,15 @@ export default function useFabricCanvas(hatColor: string): FabricCanvasHandle {
     fc.requestRenderAll();
   }, [hatColor]);
 
+  // Re-render Fabric canvas once fonts are loaded to ensure correct text rendering
+  useEffect(() => {
+    const fc = canvasRef.current;
+    if (!fc) return;
+    document.fonts.ready.then(() => {
+      fc.requestRenderAll();
+    });
+  }, []);
+
   const setText = useCallback((text: string, options?: {
     fill?: string;
     fontFamily?: string;

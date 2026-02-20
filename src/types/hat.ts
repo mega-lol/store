@@ -104,28 +104,42 @@ export const PLACEMENT_ZONES: { value: PlacementZone; label: string }[] = [
 
 const BASE_URL = import.meta.env.BASE_URL || '/';
 
-export const DEFAULT_BACK_DECALS: Decal[] = [
+export const DEFAULT_DECALS: Decal[] = [
+  // "MAKE EARTH GREAT AGAIN" front text – image decal on front of mainCap
+  {
+    id: 'default-front-text',
+    type: 'image',
+    url: `${BASE_URL}images/mega_front_text.png`,
+    position: [0, 52, 85],
+    rotation: [0, 0, 0],
+    scale: [105, 55, 105],
+    normal: [0, 0.15, 1],
+    spin: 0,
+    zone: 'front',
+  },
+  // Dove+panda patch – centered on the BACK of the cap
   {
     id: 'default-bird-panda',
     type: 'image',
     url: `${BASE_URL}images/bird_panda_embroidery.png`,
-    position: [38, 58, -119],
+    position: [0, 48, -93],
     rotation: [0, Math.PI, 0],
-    scale: [52, 35, 52],
-    normal: [0, 0, -1],
+    scale: [60, 40, 60],
+    normal: [0, 0.12, -1],
     spin: Math.PI,
     zone: 'back',
   },
+  // Earth/globe "7" patch – RIGHT SIDE of the cap
   {
     id: 'default-patch7',
     type: 'image',
     url: `${BASE_URL}images/patch7_decal.png`,
-    position: [-38, 58, -119],
-    rotation: [0, Math.PI, 0],
-    scale: [36, 40, 36],
-    normal: [0, 0, -1],
-    spin: Math.PI,
-    zone: 'back',
+    position: [88, 42, -18],
+    rotation: [0, Math.PI * 0.5, 0],
+    scale: [34, 40, 34],
+    normal: [1, 0.1, -0.15],
+    spin: 0,
+    zone: 'right',
   },
 ];
 
@@ -133,7 +147,7 @@ export const DEFAULT_HAT: HatConfig = {
   id: '',
   hatColor: '#FFFFFF',
   bandColor: '#D4A017',
-  text: 'MAKE EARTH\nGREAT AGAIN',
+  text: '',
   backText: '',
   brimText: 'បង្កើតឡើងដើម្បីសន្តិភាព',
   font: 'Vinegar',
@@ -141,7 +155,7 @@ export const DEFAULT_HAT: HatConfig = {
   textStyle: 'gold-embroidery',
   size: 'M',
   flagCode: undefined,
-  decals: [...DEFAULT_BACK_DECALS],
+  decals: [...DEFAULT_DECALS],
 };
 
 export const BUILT_IN_PRESETS: DesignPreset[] = [
@@ -159,7 +173,7 @@ export const BUILT_IN_PRESETS: DesignPreset[] = [
       textColor: '#FFD700',
       textStyle: 'gold-embroidery',
       size: 'M',
-      decals: [...DEFAULT_BACK_DECALS],
+      decals: [...DEFAULT_DECALS],
     },
   },
   {
@@ -175,7 +189,7 @@ export const BUILT_IN_PRESETS: DesignPreset[] = [
       textColor: '#FFD700',
       textStyle: 'gold-embroidery',
       size: 'M',
-      decals: [...DEFAULT_BACK_DECALS],
+      decals: [...DEFAULT_DECALS],
     },
   },
   {
@@ -191,7 +205,7 @@ export const BUILT_IN_PRESETS: DesignPreset[] = [
       textColor: '#FFD700',
       textStyle: 'gold-embroidery',
       size: 'M',
-      decals: [...DEFAULT_BACK_DECALS],
+      decals: [...DEFAULT_DECALS],
     },
   },
   {

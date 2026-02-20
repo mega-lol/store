@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo, useEffect, useState } from 'react';
 import { useFrame, useThree, useLoader, ThreeEvent } from '@react-three/fiber';
 import { useGLTF, Decal as ProjectedDecal } from '@react-three/drei';
 import * as THREE from 'three';
@@ -254,59 +254,63 @@ function drawLaurelBranch(
   ctx.save();
   const dir = mirror ? -1 : 1;
 
-  // Gold gradient for leaves
-  const leafGrad = ctx.createLinearGradient(cx, cy - leafSize, cx, cy + leafSize);
+  // Rich gold gradient for leaves
+  const leafGrad = ctx.createLinearGradient(cx - leafSize, cy - leafSize, cx + leafSize, cy + leafSize);
   leafGrad.addColorStop(0, '#FFE850');
-  leafGrad.addColorStop(0.3, '#E8A000');
-  leafGrad.addColorStop(0.6, '#FFD000');
-  leafGrad.addColorStop(1, '#CC8800');
+  leafGrad.addColorStop(0.2, '#E8A000');
+  leafGrad.addColorStop(0.5, '#D4960A');
+  leafGrad.addColorStop(0.8, '#E8A000');
+  leafGrad.addColorStop(1, '#FFE850');
 
-  // Draw curved stem
+  // Draw thick curved stem
   ctx.beginPath();
   ctx.moveTo(cx, cy);
-  ctx.quadraticCurveTo(cx + dir * branchLen * 0.5, cy - branchLen * 0.15, cx + dir * branchLen, cy - branchLen * 0.1);
+  ctx.quadraticCurveTo(
+    cx + dir * branchLen * 0.5, cy - branchLen * 0.12,
+    cx + dir * branchLen, cy - branchLen * 0.06,
+  );
   ctx.strokeStyle = color;
-  ctx.lineWidth = Math.max(2, leafSize * 0.12);
-  ctx.globalAlpha = 0.8;
+  ctx.lineWidth = Math.max(4, leafSize * 0.15);
+  ctx.globalAlpha = 0.9;
   ctx.stroke();
 
-  // Draw leaves along the branch
-  const leafCount = 6;
+  // Draw many large leaves along the branch
+  const leafCount = 9;
   for (let i = 0; i < leafCount; i++) {
-    const t = (i + 1) / (leafCount + 0.5);
+    const t = (i + 0.5) / leafCount;
     // Position along branch curve
     const bx = cx + dir * branchLen * t;
-    const by = cy - branchLen * 0.15 * Math.sin(t * Math.PI * 0.7);
+    const by = cy - branchLen * 0.12 * Math.sin(t * Math.PI * 0.8);
 
     // Alternating up/down leaves
     const upDown = i % 2 === 0 ? -1 : 1;
-    const angle = dir * (-0.3 + t * 0.5) + upDown * 0.5;
-    const lSize = leafSize * (0.7 + (1 - t) * 0.5);
+    const angle = dir * (-0.2 + t * 0.4) + upDown * 0.55;
+    const lSize = leafSize * (0.85 + (1 - t) * 0.4);
 
     ctx.save();
     ctx.translate(bx, by);
     ctx.rotate(angle);
 
-    // Leaf shape (ellipse)
+    // Large pointed leaf shape
     ctx.beginPath();
-    ctx.ellipse(0, 0, lSize * 0.35, lSize * 0.85, 0, 0, Math.PI * 2);
-    ctx.globalAlpha = 0.9;
+    ctx.ellipse(0, 0, lSize * 0.4, lSize * 1.0, 0, 0, Math.PI * 2);
+    ctx.globalAlpha = 1.0;
     ctx.fillStyle = leafGrad;
     ctx.fill();
 
-    // Leaf outline
-    ctx.globalAlpha = 0.5;
+    // Bold leaf outline
+    ctx.globalAlpha = 0.6;
     ctx.strokeStyle = '#9B7018';
-    ctx.lineWidth = Math.max(1, lSize * 0.06);
+    ctx.lineWidth = Math.max(2, lSize * 0.08);
     ctx.stroke();
 
     // Center vein
     ctx.beginPath();
-    ctx.moveTo(0, -lSize * 0.7);
-    ctx.lineTo(0, lSize * 0.7);
-    ctx.globalAlpha = 0.3;
+    ctx.moveTo(0, -lSize * 0.8);
+    ctx.lineTo(0, lSize * 0.8);
+    ctx.globalAlpha = 0.4;
     ctx.strokeStyle = '#9B7018';
-    ctx.lineWidth = Math.max(1, lSize * 0.05);
+    ctx.lineWidth = Math.max(1.5, lSize * 0.06);
     ctx.stroke();
 
     ctx.restore();
@@ -315,56 +319,77 @@ function drawLaurelBranch(
   ctx.restore();
 }
 
-function makeBrimTexture(
-  brimText: string,
+function drawTextOnArc(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  cx: number,
+  cy: number,
+  radius: number,
+  fontSize: number,
   textColor: string,
-  renderer: THREE.WebGLRenderer,
-  fontFamily?: string,
-  textStyle: TextStyle = 'flat',
-): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = 2048;
-  c.height = 512;
-  const ctx = c.getContext('2d')!;
-  ctx.clearRect(0, 0, c.width, c.height);
-
-  const cx = c.width * 0.5;
-  const cy = c.height * 0.52;
-
-  // Draw text
-  const fontStack = toFontStack(fontFamily);
-  let fontSize = 120;
-  ctx.font = `900 ${fontSize}px ${fontStack}`;
-  const measured = ctx.measureText(brimText).width;
-  if (measured > c.width * 0.55) {
-    fontSize = Math.floor((fontSize * c.width * 0.55) / measured);
-  }
-
+  textStyle: TextStyle,
+  fontStack: string,
+) {
   ctx.font = `900 ${fontSize}px ${fontStack}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  if (textStyle === 'gold-embroidery') {
-    drawGoldEmbroidery(ctx, brimText, cx, cy, fontSize);
-  } else if (textStyle === 'embroidery') {
-    drawEmbroideryStitch(ctx, brimText, cx, cy, fontSize, textColor);
-  } else if (textStyle === 'puff-3d') {
-    draw3DPuff(ctx, brimText, cx, cy, fontSize, textColor);
-  } else {
-    ctx.fillStyle = textColor;
-    ctx.fillText(brimText, cx, cy);
+  // Measure total text width to compute angular span
+  const totalWidth = ctx.measureText(text).width;
+  const totalAngle = totalWidth / radius;
+  const startAngle = Math.PI / 2 + totalAngle / 2; // start from left, centered
+
+  // Draw each character along the arc
+  let currentAngle = startAngle;
+  for (const char of text) {
+    const charWidth = ctx.measureText(char).width;
+    currentAngle -= charWidth / (2 * radius);
+
+    const x = cx + radius * Math.cos(currentAngle);
+    const y = cy - radius * Math.sin(currentAngle);
+    const rotation = -(currentAngle - Math.PI / 2);
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rotation);
+
+    if (textStyle === 'gold-embroidery') {
+      drawGoldEmbroidery(ctx, char, 0, 0, fontSize);
+    } else if (textStyle === 'embroidery') {
+      drawEmbroideryStitch(ctx, char, 0, 0, fontSize, textColor);
+    } else if (textStyle === 'puff-3d') {
+      draw3DPuff(ctx, char, 0, 0, fontSize, textColor);
+    } else {
+      ctx.fillStyle = textColor;
+      ctx.fillText(char, 0, 0);
+    }
+
+    ctx.restore();
+    currentAngle -= charWidth / (2 * radius);
   }
 
-  // Measure text bounds for laurel positioning
-  const textWidth = ctx.measureText(brimText).width;
-  const laurelGap = fontSize * 0.35;
-  const branchLen = Math.min(c.width * 0.16, fontSize * 2.5);
-  const leafSize = fontSize * 0.28;
+  return { totalAngle, startAngle };
+}
 
-  // Left laurel branch (mirrored)
-  drawLaurelBranch(ctx, cx - textWidth * 0.5 - laurelGap, cy, branchLen, leafSize, true, '#B8860B');
-  // Right laurel branch
-  drawLaurelBranch(ctx, cx + textWidth * 0.5 + laurelGap, cy, branchLen, leafSize, false, '#B8860B');
+function makeLaurelTexture(
+  renderer: THREE.WebGLRenderer,
+): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 2048;
+  c.height = 1024;
+  const ctx = c.getContext('2d')!;
+  ctx.clearRect(0, 0, c.width, c.height);
+
+  const cx = c.width * 0.5;
+  const cy = c.height * 0.48;
+  // Very large prominent branches spanning most of the brim width
+  const branchLen = c.width * 0.42;
+  const leafSize = 85;
+
+  // Left laurel branch - starts from center, extends to far left
+  drawLaurelBranch(ctx, cx, cy, branchLen, leafSize, true, '#B8860B');
+  // Right laurel branch - starts from center, extends to far right
+  drawLaurelBranch(ctx, cx, cy, branchLen, leafSize, false, '#B8860B');
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -409,6 +434,27 @@ export default function HatModel({
   const billDecalTargetRef = useRef<THREE.Mesh>(null!);
   const { gl } = useThree();
   const { scene: gltfScene } = useGLTF(MODEL_PATH);
+
+  // Font readiness: re-trigger texture creation once fonts are loaded
+  const [fontsReady, setFontsReady] = useState(false);
+  useEffect(() => {
+    document.fonts.ready.then(() => setFontsReady(true));
+  }, []);
+
+  // Load Khmer brim text image for direct projection onto bill
+  const khmerBrimUrl = `${import.meta.env.BASE_URL}images/khmer_brim_text.png`;
+  const khmerBrimTex = useLoader(THREE.TextureLoader, brimText ? khmerBrimUrl : TRANSPARENT_PIXEL);
+  useEffect(() => {
+    if (!brimText) return;
+    khmerBrimTex.colorSpace = THREE.SRGBColorSpace;
+    khmerBrimTex.wrapS = THREE.ClampToEdgeWrapping;
+    khmerBrimTex.wrapT = THREE.ClampToEdgeWrapping;
+    khmerBrimTex.generateMipmaps = true;
+    khmerBrimTex.minFilter = THREE.LinearMipmapLinearFilter;
+    khmerBrimTex.magFilter = THREE.LinearFilter;
+    khmerBrimTex.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
+    khmerBrimTex.needsUpdate = true;
+  }, [khmerBrimTex, gl, brimText]);
 
   const useFabricTexture = Boolean(fabricCanvas);
   const hasCustomTexture = Boolean(texture);
@@ -567,7 +613,7 @@ export default function HatModel({
     const blc = bl ? (bl as THREE.Box3).getCenter(new THREE.Vector3()) : mcc;
     const bls = bl ? (bl as THREE.Box3).getSize(new THREE.Vector3()) : mcs;
 
-    return {
+    const result = {
       center: box.getCenter(new THREE.Vector3()),
       size: box.getSize(new THREE.Vector3()),
       mcCenter: mcc,
@@ -577,6 +623,8 @@ export default function HatModel({
       billCenter: blc,
       billSize: bls,
     };
+
+    return result;
   }, [capMesh]);
 
   const displayScale = useMemo(() => {
@@ -590,20 +638,20 @@ export default function HatModel({
     const lines = (text || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
     return makeTextTexture(lines, textColor, gl, fontFamily, textStyle);
-  }, [text, textColor, gl, fontFamily, textStyle, useFabricTexture]);
+  }, [text, textColor, gl, fontFamily, textStyle, useFabricTexture, fontsReady]);
 
   // Back text still uses projected decal
   const backTexture = useMemo(() => {
     const lines = (backText || '').split('\n').filter(Boolean);
     if (lines.length === 0) return null;
     return makeTextTexture(lines, textColor, gl, fontFamily, textStyle);
-  }, [backText, textColor, gl, fontFamily, textStyle]);
+  }, [backText, textColor, gl, fontFamily, textStyle, fontsReady]);
 
-  // Brim text with laurel leaves
+  // Brim laurel leaves overlay (Khmer text is a separate image decal)
   const brimTexture = useMemo(() => {
     if (!brimText) return null;
-    return makeBrimTexture(brimText, textColor, gl, fontFamily, textStyle);
-  }, [brimText, textColor, gl, fontFamily, textStyle]);
+    return makeLaurelTexture(gl);
+  }, [brimText, gl]);
 
   // Dispose textures on change/unmount
   useEffect(() => {
@@ -763,8 +811,8 @@ export default function HatModel({
     mcCenter.z + mcSize.z * 0.04,
   ];
 
-  const frontTextScale: [number, number, number] = [mcSize.x * 0.9, mcSize.y * 0.55, Math.max(mcSize.z * 0.8, 0.14)];
-  const backTextScale: [number, number, number] = [mcSize.x * 0.58, mcSize.y * 0.32, Math.max(mcSize.z * 0.5, 0.10)];
+  const frontTextScale: [number, number, number] = [mcSize.x * 0.9, mcSize.y * 0.55, Math.max(mcSize.z * 0.8, 80)];
+  const backTextScale: [number, number, number] = [mcSize.x * 0.58, mcSize.y * 0.32, Math.max(mcSize.z * 0.5, 40)];
   const flagWidth = mcSize.x * 0.22;
   const flagImage = flagTexture?.image as { width?: number; height?: number } | undefined;
   const flagAspect =
@@ -775,18 +823,19 @@ export default function HatModel({
       ? flagImage.height / flagImage.width
       : 0.75;
   const flagHeight = flagWidth * flagAspect;
-  const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 0.06)];
+  const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 25)];
 
-  // Brim text positioning - projected onto the bill/visor mesh from above
+  // Brim laurel positioning - projected DOWNWARD onto the bill/visor top surface
+  // Position at bill center; projection depth must fully encompass bill thickness
   const brimTextPos: [number, number, number] = [
     billCenter.x,
-    billCenter.y + billSize.y * 0.4,
-    billCenter.z + billSize.z * 0.05,
+    billCenter.y,
+    billCenter.z + billSize.z * 0.08,
   ];
-  // Canvas is 2048x512 (4:1 aspect), scale accordingly on bill surface
-  const brimW = billSize.x * 0.85;
-  const brimH = brimW * 0.25;
-  const brimTextScale: [number, number, number] = [brimW, brimH, Math.max(billSize.y * 1.5, 20)];
+  // Full brim coverage for prominent laurels (matching spec)
+  const brimW = billSize.x * 1.1;
+  const brimH = brimW * 0.5;
+  const brimTextScale: [number, number, number] = [brimW, brimH, Math.max(billSize.y * 2.5, 150)];
 
   return (
     <group ref={groupRef} scale={displayScale}>
@@ -828,6 +877,7 @@ export default function HatModel({
               alphaTest={0.08}
               depthTest
               depthWrite={false}
+              side={THREE.FrontSide}
               polygonOffset
               polygonOffsetFactor={-2}
               polygonOffsetUnits={-2}
@@ -853,6 +903,7 @@ export default function HatModel({
               alphaTest={0.08}
               depthTest
               depthWrite={false}
+              side={THREE.FrontSide}
               polygonOffset
               polygonOffsetFactor={-2}
               polygonOffsetUnits={-2}
@@ -864,12 +915,12 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
-        {/* Brim text with laurel leaves */}
+        {/* Gold laurel leaves on brim - project DOWNWARD onto bill top surface */}
         {billDecalTarget && brimTexture && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
             position={brimTextPos}
-            rotation={[-Math.PI / 2, 0, 0]}
+            rotation={[Math.PI / 2, 0, 0]}
             scale={brimTextScale}
           >
             <meshStandardMaterial
@@ -878,13 +929,40 @@ export default function HatModel({
               alphaTest={0.06}
               depthTest
               depthWrite={false}
+              side={THREE.FrontSide}
               polygonOffset
               polygonOffsetFactor={-2.5}
               polygonOffsetUnits={-2.5}
-              roughness={textStyle === 'gold-embroidery' ? 0.18 : 0.65}
-              metalness={textStyle === 'gold-embroidery' ? 0.85 : 0.05}
-              emissive={textStyle === 'gold-embroidery' ? '#6B4500' : '#000000'}
-              emissiveIntensity={textStyle === 'gold-embroidery' ? 0.35 : 0}
+              roughness={0.18}
+              metalness={0.85}
+              emissive="#6B4500"
+              emissiveIntensity={0.35}
+            />
+          </ProjectedDecal>
+        )}
+
+        {/* Khmer brim text image - project DOWNWARD onto front of bill */}
+        {billDecalTarget && brimText && (
+          <ProjectedDecal
+            mesh={billDecalTargetRef}
+            position={[billCenter.x, billCenter.y, billCenter.z + billSize.z * 0.18]}
+            rotation={[Math.PI / 2, 0, 0]}
+            scale={[billSize.x * 0.75, billSize.x * 0.2, Math.max(billSize.y * 3, 200)]}
+          >
+            <meshStandardMaterial
+              map={khmerBrimTex}
+              transparent
+              alphaTest={0.06}
+              depthTest
+              depthWrite={false}
+              side={THREE.FrontSide}
+              polygonOffset
+              polygonOffsetFactor={-3}
+              polygonOffsetUnits={-3}
+              roughness={0.18}
+              metalness={0.85}
+              emissive="#6B4500"
+              emissiveIntensity={0.35}
             />
           </ProjectedDecal>
         )}
@@ -898,6 +976,7 @@ export default function HatModel({
               alphaTest={0.03}
               depthTest
               depthWrite={false}
+              side={THREE.FrontSide}
               polygonOffset
               polygonOffsetFactor={-2}
               polygonOffsetUnits={-2}

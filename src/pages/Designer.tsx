@@ -13,6 +13,10 @@ export default function Designer() {
   const [placementMode, setPlacementMode] = useState(false);
   const [editingOnSurface, setEditingOnSurface] = useState(false);
 
+  // Preview mode disables Fabric.js (used for screenshots/SSR/headless captures)
+  const isPreviewMode = typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('preview');
+
   // Fabric.js canvas for direct text manipulation on 3D surface
   const fabric = useFabricCanvas(config.hatColor);
 
@@ -87,9 +91,9 @@ export default function Designer() {
             onDecalSelect={handleSelectDecal}
             placementMode={placementMode}
             onPlacementComplete={() => setPlacementMode(false)}
-            fabricCanvas={fabric.canvas}
+            fabricCanvas={isPreviewMode ? null : fabric.canvas}
             editingOnSurface={editingOnSurface}
-            onEditingSurface={setEditingOnSurface}
+            onEditingSurface={isPreviewMode ? undefined : setEditingOnSurface}
             className="w-full h-full"
           />
         </div>

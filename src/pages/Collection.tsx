@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import HatScene from '@/components/HatScene';
-import { COUNTRY_HATS, COUNTRY_CODES, HatConfig, DEFAULT_BACK_DECALS } from '@/types/hat';
+import { COUNTRY_HATS, COUNTRY_CODES, HatConfig, DEFAULT_DECALS } from '@/types/hat';
 
 const coreEditions: HatConfig[] = [
   {
@@ -16,7 +16,7 @@ const coreEditions: HatConfig[] = [
     textStyle: 'gold-embroidery',
     size: 'M',
     flagCode: undefined,
-    decals: [...DEFAULT_BACK_DECALS],
+    decals: [...DEFAULT_DECALS],
   },
   {
     id: 'mega-black-gold',
@@ -29,7 +29,7 @@ const coreEditions: HatConfig[] = [
     textStyle: 'gold-embroidery',
     size: 'M',
     flagCode: undefined,
-    decals: [...DEFAULT_BACK_DECALS],
+    decals: [...DEFAULT_DECALS],
   },
   {
     id: 'white-white',
