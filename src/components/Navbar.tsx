@@ -3,17 +3,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-function DoveIcon({ className }: { className?: string }) {
+function DoveLogo({ className }: { className?: string }) {
   return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M23.5 2.5c0 0-4.8 1.3-7.2 3.7-1.6 1.6-2.3 3.2-2.6 4.3-.8-.3-1.7-.5-2.7-.5-3.3 0-6 2.2-6 5 0 .5.1 1 .2 1.5C3.2 17.3 1 19 1 19s2.5.5 5 0c1.3-.3 2.4-.8 3.2-1.3.5.1 1 .2 1.5.2 4 0 6.5-2.5 7.5-4.5.5-1 .8-2.3.8-3.4 0-.5 0-1-.1-1.5l4.6-6z" />
-      <path d="M4 15c0 0 1.5-1 3-1" opacity="0.4" fill="none" stroke="currentColor" strokeWidth="0.8" />
-    </svg>
+    <span className={className} role="img" aria-label="Peace dove">🕊️</span>
   );
 }
 
@@ -115,13 +107,13 @@ export default function Navbar() {
           pointerEvents: visible ? 'auto' : 'none',
         }}
       >
-        <div className="flex h-11 items-center gap-5 px-5 rounded-full bg-black/80 backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+        <div className="flex h-12 items-center gap-6 px-6 rounded-full bg-black/80 backdrop-blur-2xl border border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
           <Link
             to="/"
             className="text-white/90 hover:text-white transition-colors flex-shrink-0"
             aria-label="Home"
           >
-            <DoveIcon className="h-5 w-5" />
+            <DoveLogo className="text-2xl leading-none" />
           </Link>
 
           <div className="hidden md:flex items-center gap-4">

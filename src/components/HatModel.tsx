@@ -283,14 +283,16 @@ export default function HatModel({
     document.fonts.ready.then(() => setFontsReady(true));
   }, []);
 
-  // Load brim image textures: laurels + Khmer text
-  const laurelBrimUrl = `${import.meta.env.BASE_URL}images/brim_laurels.png`;
+  // Load brim image textures: left leaf, right leaf, Khmer text
+  const leafLeftUrl = `${import.meta.env.BASE_URL}images/goldleaf_left.png`;
+  const leafRightUrl = `${import.meta.env.BASE_URL}images/goldleaf_right.png`;
   const khmerBrimUrl = `${import.meta.env.BASE_URL}images/khmer_brim_text.png`;
-  const laurelBrimTex = useLoader(THREE.TextureLoader, brimText ? laurelBrimUrl : TRANSPARENT_PIXEL);
+  const leafLeftTex = useLoader(THREE.TextureLoader, brimText ? leafLeftUrl : TRANSPARENT_PIXEL);
+  const leafRightTex = useLoader(THREE.TextureLoader, brimText ? leafRightUrl : TRANSPARENT_PIXEL);
   const khmerBrimTex = useLoader(THREE.TextureLoader, brimText ? khmerBrimUrl : TRANSPARENT_PIXEL);
   useEffect(() => {
     if (!brimText) return;
-    for (const tex of [laurelBrimTex, khmerBrimTex]) {
+    for (const tex of [leafLeftTex, leafRightTex, khmerBrimTex]) {
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.wrapS = THREE.ClampToEdgeWrapping;
       tex.wrapT = THREE.ClampToEdgeWrapping;
@@ -300,7 +302,7 @@ export default function HatModel({
       tex.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
       tex.needsUpdate = true;
     }
-  }, [laurelBrimTex, khmerBrimTex, gl, brimText]);
+  }, [leafLeftTex, leafRightTex, khmerBrimTex, gl, brimText]);
 
   const useFabricTexture = Boolean(fabricCanvas);
   const hasCustomTexture = Boolean(texture);
@@ -504,7 +506,7 @@ export default function HatModel({
     return () => { backTexture?.dispose(); };
   }, [backTexture]);
 
-  // laurelBrimTex and khmerBrimTex are managed by useLoader – no manual dispose needed
+  // leafLeftTex, leafRightTex, khmerBrimTex are managed by useLoader – no manual dispose needed
 
   useEffect(() => {
     capMesh.traverse((child) => {
@@ -665,17 +667,16 @@ export default function HatModel({
   const flagHeight = flagWidth * flagAspect;
   const flagScale: [number, number, number] = [flagWidth, flagHeight, Math.max(mcSize.z * 0.25, 25)];
 
-  // Brim laurel positioning - projected DOWNWARD onto the bill/visor top surface
-  // Position shifted forward and down to keep leaves ON the brim (not crown)
-  const brimTextPos: [number, number, number] = [
-    billCenter.x,
-    billCenter.y - billSize.y * 0.15,
-    billCenter.z + billSize.z * 0.15,
-  ];
-  // Sized to fit brim width, shorter height to stay on brim surface
-  const brimW = billSize.x * 1.05;
-  const brimH = brimW * 0.45;
-  const brimTextScale: [number, number, number] = [brimW, brimH, Math.max(billSize.y * 2.0, 120)];
+  // Brim leaf positioning - two separate leaves projected DOWNWARD onto bill/visor
+  const leafY = billCenter.y - billSize.y * 0.15;
+  const leafZ = billCenter.z + billSize.z * 0.15;
+  const leafW = billSize.x * 0.42;
+  const leafH = leafW * 1.2;
+  const leafDepth = Math.max(billSize.y * 2.0, 120);
+  const leafSpread = billSize.x * 0.30;
+  const leafLeftPos: [number, number, number] = [billCenter.x - leafSpread, leafY, leafZ];
+  const leafRightPos: [number, number, number] = [billCenter.x + leafSpread, leafY, leafZ];
+  const leafScale: [number, number, number] = [leafW, leafH, leafDepth];
 
   return (
     <group ref={groupRef} scale={displayScale}>
@@ -755,16 +756,42 @@ export default function HatModel({
           </ProjectedDecal>
         )}
 
-        {/* Gold laurel leaves on brim - official embroidered goldleaf image */}
+        {/* Left gold laurel leaf on brim */}
         {billDecalTarget && brimText && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
-            position={brimTextPos}
+            position={leafLeftPos}
             rotation={[Math.PI / 2, 0, 0]}
-            scale={brimTextScale}
+            scale={leafScale}
           >
             <meshStandardMaterial
-              map={laurelBrimTex}
+              map={leafLeftTex}
+              transparent
+              alphaTest={0.06}
+              depthTest
+              depthWrite={false}
+              side={THREE.FrontSide}
+              polygonOffset
+              polygonOffsetFactor={-2.5}
+              polygonOffsetUnits={-2.5}
+              roughness={0.18}
+              metalness={0.85}
+              emissive="#6B4500"
+              emissiveIntensity={0.35}
+            />
+          </ProjectedDecal>
+        )}
+
+        {/* Right gold laurel leaf on brim */}
+        {billDecalTarget && brimText && (
+          <ProjectedDecal
+            mesh={billDecalTargetRef}
+            position={leafRightPos}
+            rotation={[Math.PI / 2, 0, 0]}
+            scale={leafScale}
+          >
+            <meshStandardMaterial
+              map={leafRightTex}
               transparent
               alphaTest={0.06}
               depthTest
