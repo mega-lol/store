@@ -147,6 +147,10 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
     : Math.max(0.03, Math.max(sizeX, sizeY) * 0.6);
   const decalScale: [number, number, number] = [sizeX, sizeY, projectionDepth];
 
+  // Style-aware material properties for embroidery look
+  const isGoldEmbroidery = decal.style === 'gold-embroidery';
+  const isEmbroidery = decal.style === 'embroidery' || isGoldEmbroidery;
+
   if (!targetMesh) return null;
   targetMeshRef.current = targetMesh;
 
@@ -164,7 +168,7 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
       <meshStandardMaterial
         map={activeTexture}
         bumpMap={bumpTexture}
-        bumpScale={2.5}
+        bumpScale={isGoldEmbroidery ? 4.5 : isEmbroidery ? 3.0 : 2.0}
         transparent
         alphaTest={0.06}
         depthTest
@@ -173,10 +177,10 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
         polygonOffset
         polygonOffsetFactor={isSelected ? -4 : -3}
         polygonOffsetUnits={isSelected ? -4 : -3}
-        roughness={0.55}
-        metalness={0.35}
-        emissive={isSelected ? '#1f1f1f' : '#3D2200'}
-        emissiveIntensity={isSelected ? 0.3 : 0.12}
+        roughness={isGoldEmbroidery ? 0.25 : isEmbroidery ? 0.5 : 0.65}
+        metalness={isGoldEmbroidery ? 0.75 : isEmbroidery ? 0.3 : 0.15}
+        emissive={isSelected ? '#1f1f1f' : isGoldEmbroidery ? '#6B4500' : '#3D2200'}
+        emissiveIntensity={isSelected ? 0.3 : isGoldEmbroidery ? 0.3 : 0.12}
       />
     </ProjectedDecal>
   );
