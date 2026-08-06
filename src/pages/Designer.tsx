@@ -1,12 +1,19 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import HatScene from '@/components/HatScene';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/store/cartStore';
 import { Colorway, HAT_BLACK, HAT_PRICE, HAT_WHITE } from '@/types/hat';
 
 export default function Designer() {
-  const [colorway, setColorway] = useState<Colorway>('black');
+  // ?preview freezes auto-rotation; ?colorway= and ?angle= (CAMERA_PRESETS index)
+  // give deterministic renders for visual regression captures.
+  const [params] = useSearchParams();
+  const preview = params.has('preview');
+  const angle = Number(params.get('angle') ?? '-1');
+  const [colorway, setColorway] = useState<Colorway>(
+    params.get('colorway') === 'white' ? 'white' : 'black',
+  );
   const navigate = useNavigate();
   const { addItem } = useCart();
 
@@ -31,7 +38,9 @@ export default function Designer() {
             textStyle={config.textStyle}
             font={config.font}
             decals={config.decals}
-            autoRotate
+            autoRotate={!preview}
+            cameraPreset={angle}
+            cameraPresetTrigger={preview && angle >= 0 ? 1 : 0}
             className="w-full h-full"
           />
         </div>

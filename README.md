@@ -1,6 +1,6 @@
 # Osage Brothers — Store
 
-Production frontend for `osagebrothers.com`. Single-SKU MEGA hat. Black or white. $50.
+Production frontend for `mega.shop` (GitHub Pages, custom domain). Single-SKU MEGA hat. Black or white. $50.
 
 - 3D R3F preview
 - IAM SSO via `id.osagebrothers.com` (cookie scoped to `.osagebrothers.com`)
