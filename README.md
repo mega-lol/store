@@ -24,39 +24,45 @@ npm run preview     # local preview of the production bundle
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `VITE_BASE_PATH` | `/` for `osagebrothers.com` | Pass `/megahats/` for the legacy GitHub Pages build. |
-| `VITE_IAM_URL` | `https://id.osagebrothers.com` | Hanzo IAM portal hostname. |
-| `VITE_HANZO_COMMERCE_URL` | `https://commerce.hanzo.ai` | Commerce backend base URL. |
-| `VITE_HANZO_TENANT` | `osage` | Tenant slug, sent as `X-Hanzo-Tenant` header. |
+| `VITE_BASE_PATH` | `/` | Pass `/megahats/` for the legacy GitHub Pages build. |
+| `VITE_HANZO_API_URL` | `https://api.hanzo.ai` | The one Hanzo API origin (commerce, insights, sites). |
+| `VITE_HANZO_PK` | _(empty)_ | The `megashop` project publishable `pk-` key. Powers the Insights tag and authenticates checkout. Empty ⇒ analytics inert, checkout falls back to pre-order. |
+| `VITE_IAM_URL` | _(empty → `https://hanzo.id` links)_ | Set only when an IAM portal is wired for this domain; unset skips the `/v1/me` probe entirely. |
 
-No other tenant context env is needed — the org slug is `osage` everywhere.
+One key, one origin. The `pk-` key is the tenant — commerce resolves the org
+from the credential, so no tenant header exists anywhere.
 
 ## Auth flow
 
-The store does not run an OIDC client. Login is delegated:
-
-1. User clicks **Sign In** → browser navigates to
-   `https://id.osagebrothers.com/login?return_url=https://osagebrothers.com/...&tenant=osage`.
-2. The `@hanzo/id` portal handles login/signup and sets a session cookie on
-   `.osagebrothers.com`.
-3. Browser returns to the store. `fetchCurrentUser()` reads the session via
-   `GET https://commerce.hanzo.ai/v1/me` (cookie auto-attached, `credentials: 'include'`).
-4. Sign-out → `https://id.osagebrothers.com/logout?return_url=https://osagebrothers.com/`.
-
-For this to work the IAM portal **must** set the session cookie with
-`Domain=.osagebrothers.com; Secure; HttpOnly; SameSite=Lax`.
+The store does not run an OIDC client. Login is delegated to the Hanzo IAM
+portal (`hanzo.id` by default). Until `VITE_IAM_URL` is set for this domain,
+the store never probes `/v1/me` — checkout works without login.
 
 ## Checkout flow
 
-1. Cart posts to `POST https://commerce.hanzo.ai/v1/checkout/sessions`
-   with `X-Hanzo-Tenant: osage`. Server returns `{ checkoutUrl, sessionId }`.
-2. Browser redirects to `checkoutUrl`, which is a `pay.osagebrothers.com/...`
-   URL served by the embedded `@hanzoai/pay` UI in the commerce binary.
-3. After payment, the `@hanzoai/pay` UI redirects back to
-   `https://osagebrothers.com/cart?checkout=success` (or `=cancel`).
+1. Cart posts to `POST ${VITE_HANZO_API_URL}/v1/checkout/sessions` with
+   `Authorization: Bearer ${VITE_HANZO_PK}`. Server returns
+   `{ checkoutUrl, sessionId }`.
+2. Browser redirects to `checkoutUrl` (Hanzo Pay, served by the commerce
+   binary).
+3. After payment, Hanzo Pay redirects back to
+   `https://mega.shop/cart?checkout=success` (or `=cancel`).
+4. While the backend has no checkout route deployed (404), the cart degrades
+   to a pre-order confirmation instead of failing.
 
-No payment-provider keys touch the frontend. Stripe (or whatever provider the
-tenant configures) is selected and called from the commerce backend.
+No payment-provider keys touch the frontend. Stripe/Square is selected and
+called from the commerce backend.
+
+## Analytics
+
+`index.html` carries the Hanzo Insights tag:
+
+```html
+<script defer src="https://api.hanzo.ai/v1/event.js" data-key="pk-…"></script>
+```
+
+The key is injected at build time from `VITE_HANZO_PK`; with no key the tag is
+inert (sends nothing).
 
 ## Ops checklist
 

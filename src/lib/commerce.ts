@@ -1,11 +1,13 @@
 import { HatConfig } from '@/types/hat';
 
-const COMMERCE_URL = (
-  (import.meta.env.VITE_HANZO_COMMERCE_URL as string | undefined)?.trim() ||
-  'https://commerce.hanzo.ai'
+// One API origin (api.hanzo.ai), one publishable key. The key is the tenant:
+// commerce resolves the org from the credential, so no tenant header exists.
+const API_URL = (
+  (import.meta.env.VITE_HANZO_API_URL as string | undefined)?.trim() ||
+  'https://api.hanzo.ai'
 ).replace(/\/$/, '');
 
-const TENANT = (import.meta.env.VITE_HANZO_TENANT as string | undefined)?.trim() || 'osage';
+const PUBLISHABLE_KEY = (import.meta.env.VITE_HANZO_PK as string | undefined)?.trim() || '';
 
 export interface CheckoutCustomer {
   fullName: string;
@@ -38,12 +40,11 @@ export interface CheckoutSessionResponse {
 export async function createCheckoutSession(
   request: CheckoutSessionRequest,
 ): Promise<CheckoutSessionResponse> {
-  const response = await fetch(`${COMMERCE_URL}/v1/checkout/sessions`, {
+  const response = await fetch(`${API_URL}/v1/checkout/sessions`, {
     method: 'POST',
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'X-Hanzo-Tenant': TENANT,
+      ...(PUBLISHABLE_KEY ? { Authorization: `Bearer ${PUBLISHABLE_KEY}` } : {}),
     },
     body: JSON.stringify(request),
   });
@@ -55,3 +56,5 @@ export async function createCheckoutSession(
 
   return (await response.json()) as CheckoutSessionResponse;
 }
+
+export const HANZO = { apiUrl: API_URL, publishableKey: PUBLISHABLE_KEY };

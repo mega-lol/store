@@ -180,7 +180,7 @@ export default function Cart() {
               {isCheckingOut ? 'Starting checkout...' : 'Checkout'}
             </Button>
             <p className="text-xs text-muted-foreground text-center">
-              Secure checkout at pay.osagebrothers.com
+              Secure checkout powered by Hanzo
             </p>
           </div>
         </div>
