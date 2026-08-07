@@ -9,6 +9,7 @@ import { CartProvider } from "@/store/cartStore";
 import { AuthProvider } from "@/lib/auth";
 import Index from "./pages/Index";
 import Designer from "./pages/Designer";
+import Editor from "./pages/Editor";
 import Cart from "./pages/Cart";
 import NotFound from "./pages/NotFound";
 import Collection from "./pages/Collection";
@@ -30,6 +31,7 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/designer" element={<Designer />} />
+              <Route path="/editor" element={<Editor />} />
               <Route path="/collection" element={<Collection />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/account" element={<Account />} />
