@@ -1,7 +1,7 @@
 import { HatConfig } from '@/types/hat';
 
-// One API origin (api.hanzo.ai), one publishable key. The key is the tenant:
-// commerce resolves the org from the credential, so no tenant header exists.
+// One API origin (api.hanzo.ai), one publishable key. The key IS the org:
+// commerce resolves it from the credential, so no org header exists.
 const API_URL = (
   (import.meta.env.VITE_HANZO_API_URL as string | undefined)?.trim() ||
   'https://api.hanzo.ai'

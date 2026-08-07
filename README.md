@@ -29,8 +29,8 @@ npm run preview     # local preview of the production bundle
 | `VITE_HANZO_PK` | _(empty)_ | The `megashop` project publishable `pk-` key. Powers the Insights tag and authenticates checkout. Empty ⇒ analytics inert, checkout falls back to pre-order. |
 | `VITE_IAM_URL` | _(empty → `https://hanzo.id` links)_ | Set only when an IAM portal is wired for this domain; unset skips the `/v1/me` probe entirely. |
 
-One key, one origin. The `pk-` key is the tenant — commerce resolves the org
-from the credential, so no tenant header exists anywhere.
+One key, one origin. The `pk-` key IS the org — commerce resolves it from
+the credential, so no org header exists anywhere.
 
 ## Auth flow
 
@@ -69,19 +69,19 @@ inert (sends nothing).
 These are infrastructure prerequisites for a working deployment. The store
 itself does not provision them.
 
-### 1. Tenant registration in `@hanzo/iam`
+### 1. Org registration in `@hanzo/iam`
 
 Register the `osage` org in the Hanzo IAM control plane (`~/work/hanzo/iam`)
 with branding pulled from `@hanzo/id` (`~/work/hanzo/id/lib/branding.ts` —
 entries for `osagebrothers.com`, `id.osagebrothers.com`,
 `pay.osagebrothers.com` already added).
 
-KMS keys for the tenant must be scoped per-org per the standing rule:
+KMS keys must be scoped per-org per the standing rule:
 secrets in KMS only, never plaintext.
 
-### 2. Tenant registration in `@hanzo/commerce`
+### 2. Org registration in `@hanzo/commerce`
 
-Register the `osage` tenant in the Commerce backend
+Register the `osage` org in the Commerce backend
 (`~/work/hanzo/commerce`) with:
 
 - Provider routing (Stripe account / Square / etc).
@@ -111,29 +111,13 @@ only consumes them as deployed services (`id.osagebrothers.com`,
 
 ## Deployment
 
-### Hanzo k8s (default)
+Two live targets, one artifact:
 
-`k8s/overlays/megastore-lol` is the historical overlay. A new
-`k8s/overlays/osagebrothers` overlay should be created mirroring it, with
-the host changed to `osagebrothers.com`. CI workflow:
-`.github/workflows/deploy-k8s.yml`.
-
-Required GitHub secrets:
-
-- `HANZO_K8S_KUBECONFIG_B64`
-
-GitHub vars:
-
-- `HANZO_COMMERCE_URL` (e.g. `https://commerce.hanzo.ai`)
-- `HANZO_TENANT` (`osage`)
-- `IAM_URL` (`https://id.osagebrothers.com`)
-
-### Hanzo PaaS (alternative)
-
-`.github/workflows/deploy-paas.yml` builds, pushes to GHCR, and upserts the
-container under org slug `osage` on `platform.hanzo.ai`.
-
-Required GitHub secrets: `PAAS_EMAIL`, `PAAS_PASSWORD`.
+- **GitHub Pages** (`mega.shop`): auto on push to main
+  (`.github/workflows/deploy.yml`). Var: `HANZO_PK`.
+- **Hanzo sites** (`megashop.hanzo.app`): zip `dist/` (exclude `*.map`, stay
+  under 4 MiB) → `POST api.hanzo.ai/v1/platform/sites/megashop/deploy` with a
+  `hanzo auth token` bearer.
 
 ## Stack
 
