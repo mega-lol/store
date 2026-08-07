@@ -116,17 +116,30 @@ function frontText(finish: Finish, hatColor: string): Decal {
   };
 }
 
-// Heritage back panel: dove and globe patch flanking the snapback, panda by
-// the inside label. Positions are the spec-tuned values.
+// Heritage rear panels, per official_hatdesign.jpg: panda with the dove just
+// left of it on the wearer-left panel, globe patch on the wearer-right panel —
+// all above and clear of the snapback opening. Panda lives OUTSIDE, not inside.
 const HERITAGE_DECALS: Decal[] = [
+  {
+    id: 'heritage-panda',
+    type: 'image',
+    url: `${BASE_URL}images/panda_decal.webp`,
+    position: [30, 44, -84],
+    rotation: [0, Math.PI, 0],
+    scale: [30, 36, 45],
+    normal: [0.15, 0.05, -1],
+    spin: 0,
+    zone: 'back',
+    style: 'embroidery',
+  },
   {
     id: 'heritage-dove',
     type: 'image',
     url: `${BASE_URL}images/dove_decal.webp`,
-    position: [-26, 36, -86],
+    position: [42, 51, -79],
     rotation: [0, Math.PI, 0],
-    scale: [34, 34, 50],
-    normal: [0, 0, -1],
+    scale: [22, 22, 42],
+    normal: [0.35, 0.05, -0.92],
     spin: Math.PI,
     zone: 'back',
     style: 'embroidery',
@@ -135,25 +148,13 @@ const HERITAGE_DECALS: Decal[] = [
     id: 'heritage-patch7',
     type: 'image',
     url: `${BASE_URL}images/patch7_decal.webp`,
-    position: [26, 36, -86],
+    position: [-42, 46, -78],
     rotation: [0, Math.PI, 0],
-    scale: [34, 34, 50],
-    normal: [0, 0, -1],
+    scale: [28, 30, 45],
+    normal: [-0.4, 0.05, -0.9],
     spin: Math.PI,
     zone: 'back',
     style: 'embroidery',
-  },
-  {
-    id: 'heritage-panda',
-    type: 'image',
-    url: `${BASE_URL}images/panda_decal.webp`,
-    position: [-30, 18, 30],
-    rotation: [0, 0, 0],
-    scale: [22, 22, 40],
-    normal: [0, -1, 0.2],
-    spin: 0,
-    zone: 'inside',
-    style: 'flat',
   },
 ];
 

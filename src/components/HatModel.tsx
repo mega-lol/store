@@ -677,16 +677,21 @@ export default function HatModel({
 
   // Brim projection: tilt forward to follow brim slope
   const brimProjectionRot: [number, number, number] = [Math.PI / 2 - 0.18, 0, 0];
-  // Leaf positioning: LARGE laurel branches spanning most of the brim (per spec)
+  // Laurel branches along the brim SIDE edges, tips converging forward (per
+  // official_hatdesign.jpg). The art is 512×171 — keep its 3:1 aspect or the
+  // branches smear into blobs. Each branch yaws inward so it follows the edge.
   const leafY = billCenter.y + billSize.y * 0.10;
-  const leafZ = billCenter.z + billSize.z * 0.14;
-  const leafW = billSize.x * 0.66;
-  const leafH = leafW * 0.82;
+  const leafZ = billCenter.z + billSize.z * 0.12;
+  const leafW = billSize.x * 0.56;
+  const leafH = leafW * 0.334;
   const leafDepth = Math.max(billSize.y * 0.12, 10);
-  const leafSpread = billSize.x * 0.30;
+  const leafSpread = billSize.x * 0.25;
   const leafLeftPos: [number, number, number] = [billCenter.x - leafSpread, leafY, leafZ];
   const leafRightPos: [number, number, number] = [billCenter.x + leafSpread, leafY, leafZ];
   const leafScale: [number, number, number] = [leafW, leafH, leafDepth];
+  const leafYaw = 0.7;
+  const leafLeftRot: [number, number, number] = [brimProjectionRot[0], 0, leafYaw];
+  const leafRightRot: [number, number, number] = [brimProjectionRot[0], 0, -leafYaw];
 
   return (
     <group ref={groupRef} scale={displayScale}>
@@ -771,7 +776,7 @@ export default function HatModel({
           <ProjectedDecal
             mesh={billDecalTargetRef}
             position={leafLeftPos}
-            rotation={brimProjectionRot}
+            rotation={leafLeftRot}
             scale={leafScale}
           >
             <meshStandardMaterial
@@ -797,7 +802,7 @@ export default function HatModel({
           <ProjectedDecal
             mesh={billDecalTargetRef}
             position={leafRightPos}
-            rotation={brimProjectionRot}
+            rotation={leafRightRot}
             scale={leafScale}
           >
             <meshStandardMaterial
@@ -822,14 +827,14 @@ export default function HatModel({
         {billDecalTarget && brimText && (
           <ProjectedDecal
             mesh={billDecalTargetRef}
-            position={[billCenter.x, billCenter.y + billSize.y * 0.10, billCenter.z + billSize.z * 0.22]}
-            rotation={brimProjectionRot}
-            scale={[billSize.x * 0.62, billSize.x * 0.18, Math.max(billSize.y * 0.12, 10)]}
+            position={[billCenter.x, billCenter.y + billSize.y * 0.02, billCenter.z + billSize.z * 0.24]}
+            rotation={[Math.PI / 2 - 0.30, 0, Math.PI]}
+            scale={[billSize.x * 0.50, (billSize.x * 0.50) / 4.59, Math.max(billSize.y * 0.45, 18)]}
           >
             <meshStandardMaterial
               map={khmerBrimTex}
               transparent
-              alphaTest={0.06}
+              alphaTest={0.02}
               depthTest
               depthWrite={false}
               side={THREE.FrontSide}

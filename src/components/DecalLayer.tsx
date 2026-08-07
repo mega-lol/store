@@ -180,10 +180,10 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
         polygonOffset
         polygonOffsetFactor={isSelected ? -4 : -3}
         polygonOffsetUnits={isSelected ? -4 : -3}
-        roughness={isGoldEmbroidery ? 0.25 : isEmbroidery ? 0.5 : 0.65}
-        metalness={isGoldEmbroidery ? 0.75 : isEmbroidery ? 0.3 : 0.15}
-        emissive={isSelected ? '#1f1f1f' : isGoldEmbroidery ? '#6B4500' : '#3D2200'}
-        emissiveIntensity={isSelected ? 0.3 : isGoldEmbroidery ? 0.3 : 0.12}
+        roughness={isGoldEmbroidery ? 0.25 : isEmbroidery ? 0.6 : 0.65}
+        metalness={isGoldEmbroidery ? 0.75 : isEmbroidery ? 0.08 : 0.15}
+        emissive={isSelected ? '#1f1f1f' : isGoldEmbroidery ? '#6B4500' : '#000000'}
+        emissiveIntensity={isSelected ? 0.3 : isGoldEmbroidery ? 0.3 : 0}
       />
     </ProjectedDecal>
   );
