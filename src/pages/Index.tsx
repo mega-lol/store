@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import HatScene from '@/components/HatScene';
-import { DEFAULT_HAT } from '@/types/hat';
+import { buildHat } from '@/types/hat';
 import { getHatPrice, useCart } from '@/store/cartStore';
 
-const config = DEFAULT_HAT;
+// The hero wears the flagship: heritage black — laurels, blessing, dove,
+// panda and patch all show as it rotates.
+const config = buildHat('black', 'gold', 'heritage');
 
 const TRANSLATIONS = [
   { text: 'Make Earth Great Again', lang: 'English' },
