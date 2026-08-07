@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import HatScene from '@/components/HatScene';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/store/cartStore';
-import { buildHat, Colorway, Finish, FINISHES, finishTint, HAT_PRICE } from '@/types/hat';
+import { buildHat, Colorway, Finish, FINISHES, finishTint, HAT_PRICE, Style } from '@/types/hat';
 
 export default function Designer() {
   // ?preview freezes auto-rotation; ?colorway=, ?finish= and ?angle=
@@ -18,10 +18,13 @@ export default function Designer() {
     const f = params.get('finish');
     return f === 'rose' || f === 'tonal' ? f : 'gold';
   });
+  const [style, setStyle] = useState<Style>(
+    params.get('style') === 'heritage' ? 'heritage' : 'classic',
+  );
   const navigate = useNavigate();
   const { addItem } = useCart();
 
-  const config = useMemo(() => buildHat(colorway, finish), [colorway, finish]);
+  const config = useMemo(() => buildHat(colorway, finish, style), [colorway, finish, style]);
 
   const handleAdd = () => {
     addItem(config);
@@ -80,6 +83,30 @@ export default function Designer() {
                 White
               </button>
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">Style</p>
+            <div className="grid grid-cols-2 gap-2">
+              {(['classic', 'heritage'] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStyle(s)}
+                  className={`h-14 rounded-xl border transition-colors text-xs uppercase tracking-[0.2em] font-bold ${
+                    style === s
+                      ? 'border-white bg-white text-black'
+                      : 'border-white/15 text-white/60 hover:border-white/30'
+                  }`}
+                >
+                  {s === 'classic' ? 'Classic' : 'Heritage'}
+                </button>
+              ))}
+            </div>
+            {style === 'heritage' && (
+              <p className="text-xs text-white/45 leading-relaxed">
+                Dove &amp; globe at the back, gold laurels and Khmer blessing on the brim.
+              </p>
+            )}
           </div>
 
           <div className="space-y-3">

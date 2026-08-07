@@ -283,14 +283,16 @@ export default function HatModel({
     document.fonts.ready.then(() => setFontsReady(true));
   }, []);
 
-  // Brim image textures: left leaf, right leaf (gated on brimText presence)
+  // Brim image textures: left leaf, right leaf, Khmer blessing (gated on brimText)
   const leafLeftUrl = `${import.meta.env.BASE_URL}images/goldleaf_left.png`;
   const leafRightUrl = `${import.meta.env.BASE_URL}images/goldleaf_right.png`;
+  const khmerBrimUrl = `${import.meta.env.BASE_URL}images/khmer_brim_text.png`;
   const leafLeftTex = useLoader(THREE.TextureLoader, brimText ? leafLeftUrl : TRANSPARENT_PIXEL);
   const leafRightTex = useLoader(THREE.TextureLoader, brimText ? leafRightUrl : TRANSPARENT_PIXEL);
+  const khmerBrimTex = useLoader(THREE.TextureLoader, brimText ? khmerBrimUrl : TRANSPARENT_PIXEL);
   useEffect(() => {
     if (!brimText) return;
-    for (const tex of [leafLeftTex, leafRightTex]) {
+    for (const tex of [leafLeftTex, leafRightTex, khmerBrimTex]) {
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.wrapS = THREE.ClampToEdgeWrapping;
       tex.wrapT = THREE.ClampToEdgeWrapping;
@@ -300,7 +302,7 @@ export default function HatModel({
       tex.anisotropy = Math.min(8, gl.capabilities.getMaxAnisotropy());
       tex.needsUpdate = true;
     }
-  }, [leafLeftTex, leafRightTex, gl, brimText]);
+  }, [leafLeftTex, leafRightTex, khmerBrimTex, gl, brimText]);
 
   const useFabricTexture = Boolean(fabricCanvas);
   const hasCustomTexture = Boolean(texture);
@@ -808,6 +810,32 @@ export default function HatModel({
               polygonOffset
               polygonOffsetFactor={-2.5}
               polygonOffsetUnits={-2.5}
+              roughness={0.18}
+              metalness={0.85}
+              emissive="#6B4500"
+              emissiveIntensity={0.35}
+            />
+          </ProjectedDecal>
+        )}
+
+        {/* Khmer brim blessing — tilted projection following the brim slope */}
+        {billDecalTarget && brimText && (
+          <ProjectedDecal
+            mesh={billDecalTargetRef}
+            position={[billCenter.x, billCenter.y + billSize.y * 0.10, billCenter.z + billSize.z * 0.22]}
+            rotation={brimProjectionRot}
+            scale={[billSize.x * 0.62, billSize.x * 0.18, Math.max(billSize.y * 0.12, 10)]}
+          >
+            <meshStandardMaterial
+              map={khmerBrimTex}
+              transparent
+              alphaTest={0.06}
+              depthTest
+              depthWrite={false}
+              side={THREE.FrontSide}
+              polygonOffset
+              polygonOffsetFactor={-3}
+              polygonOffsetUnits={-3}
               roughness={0.18}
               metalness={0.85}
               emissive="#6B4500"

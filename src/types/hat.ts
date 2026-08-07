@@ -50,10 +50,16 @@ export function finishTint(finish: Finish, hatColor: string): string {
   return hatColor === '#000000' ? '#242424' : '#E9E5DC';
 }
 
+/** Classic is the clean single mark; Heritage carries the full set —
+ * dove and globe patch flanking the snapback, gold laurels and Khmer
+ * blessing on the brim, panda by the inside label. */
+export type Style = 'classic' | 'heritage';
+
 export interface HatConfig {
   id: string;
   colorway: Colorway;
   finish: Finish;
+  style: Style;
   hatColor: string;
   bandColor?: string;
   texture?: string;
@@ -110,23 +116,78 @@ function frontText(finish: Finish, hatColor: string): Decal {
   };
 }
 
-export function buildHat(colorway: Colorway, finish: Finish = 'gold'): HatConfig {
+// Heritage back panel: dove and globe patch flanking the snapback, panda by
+// the inside label. Positions are the spec-tuned values.
+const HERITAGE_DECALS: Decal[] = [
+  {
+    id: 'heritage-dove',
+    type: 'image',
+    url: `${BASE_URL}images/dove_decal.png`,
+    position: [-26, 36, -86],
+    rotation: [0, Math.PI, 0],
+    scale: [34, 34, 50],
+    normal: [0, 0, -1],
+    spin: Math.PI,
+    zone: 'back',
+    style: 'embroidery',
+  },
+  {
+    id: 'heritage-patch7',
+    type: 'image',
+    url: `${BASE_URL}images/patch7_decal.png`,
+    position: [26, 36, -86],
+    rotation: [0, Math.PI, 0],
+    scale: [34, 34, 50],
+    normal: [0, 0, -1],
+    spin: Math.PI,
+    zone: 'back',
+    style: 'embroidery',
+  },
+  {
+    id: 'heritage-panda',
+    type: 'image',
+    url: `${BASE_URL}images/panda_decal.png`,
+    position: [-30, 18, 30],
+    rotation: [0, 0, 0],
+    scale: [22, 22, 40],
+    normal: [0, -1, 0.2],
+    spin: 0,
+    zone: 'inside',
+    style: 'flat',
+  },
+];
+
+/** The Khmer blessing on the brim — "founded for peace". Setting it is what
+ * turns on the brim text and the gold laurels either side of it. */
+const BRIM_BLESSING = 'បង្កើតឡើងដើម្បីសន្តិភាព';
+
+export function buildHat(
+  colorway: Colorway,
+  finish: Finish = 'gold',
+  style: Style = 'classic',
+): HatConfig {
   const isBlack = colorway === 'black';
   const hatColor = isBlack ? '#000000' : '#FFFFFF';
+  const heritage = style === 'heritage';
   return {
-    id: `osage-${colorway}-${finish}`,
+    id: `osage-${colorway}-${finish}-${style}`,
     colorway,
     finish,
+    style,
     hatColor,
     bandColor: hatColor,
     text: '',
     backText: '',
-    brimText: '',
+    brimText: heritage ? BRIM_BLESSING : '',
     font: 'Vinegar',
     textColor: finishTint(finish, hatColor),
     textStyle: finish === 'tonal' ? 'embroidery' : 'gold-embroidery',
     size: 'M',
-    decals: [frontText(finish, hatColor), INSIDE_LABEL_DECAL],
+    decals: [
+      frontText(finish, hatColor),
+      INSIDE_LABEL_DECAL,
+      ...(heritage ? HERITAGE_DECALS : []),
+    ],
   };
 }
 

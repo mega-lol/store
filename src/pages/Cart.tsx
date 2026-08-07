@@ -130,6 +130,7 @@ export default function Cart() {
                 <p className="font-medium truncate">
                   MEGA Hat — {item.hat.colorway === 'black' ? 'Black' : 'White'}
                   {item.hat.finish === 'rose' ? ' · Rose Gold' : item.hat.finish === 'tonal' ? ' · Tonal' : ' · Gold'}
+                  {item.hat.style === 'heritage' ? ' · Heritage' : ''}
                 </p>
                 <p className="text-xs text-muted-foreground">Size: {item.hat.size}</p>
               </div>
