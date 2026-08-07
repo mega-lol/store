@@ -284,9 +284,9 @@ export default function HatModel({
   }, []);
 
   // Brim image textures: left leaf, right leaf, Khmer blessing (gated on brimText)
-  const leafLeftUrl = `${import.meta.env.BASE_URL}images/goldleaf_left.png`;
-  const leafRightUrl = `${import.meta.env.BASE_URL}images/goldleaf_right.png`;
-  const khmerBrimUrl = `${import.meta.env.BASE_URL}images/khmer_brim_text.png`;
+  const leafLeftUrl = `${import.meta.env.BASE_URL}images/goldleaf_left.webp`;
+  const leafRightUrl = `${import.meta.env.BASE_URL}images/goldleaf_right.webp`;
+  const khmerBrimUrl = `${import.meta.env.BASE_URL}images/khmer_brim_text.webp`;
   const leafLeftTex = useLoader(THREE.TextureLoader, brimText ? leafLeftUrl : TRANSPARENT_PIXEL);
   const leafRightTex = useLoader(THREE.TextureLoader, brimText ? leafRightUrl : TRANSPARENT_PIXEL);
   const khmerBrimTex = useLoader(THREE.TextureLoader, brimText ? khmerBrimUrl : TRANSPARENT_PIXEL);

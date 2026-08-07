@@ -88,7 +88,7 @@ const BASE_URL = import.meta.env.BASE_URL || '/';
 const INSIDE_LABEL_DECAL: Decal = {
   id: 'inside-out-out-label',
   type: 'image',
-  url: `${BASE_URL}images/inside_label.png`,
+  url: `${BASE_URL}images/inside_label.webp`,
   position: [0, 20, 60],
   rotation: [0, 0, 0],
   scale: [55, 30, 55],
@@ -104,7 +104,7 @@ function frontText(finish: Finish, hatColor: string): Decal {
   return {
     id: 'front-mega-text',
     type: 'image',
-    url: `${BASE_URL}images/front_text.png`,
+    url: `${BASE_URL}images/front_text.webp`,
     color: finishTint(finish, hatColor),
     position: [0, 58, 85],
     rotation: [0, 0, 0],
@@ -122,7 +122,7 @@ const HERITAGE_DECALS: Decal[] = [
   {
     id: 'heritage-dove',
     type: 'image',
-    url: `${BASE_URL}images/dove_decal.png`,
+    url: `${BASE_URL}images/dove_decal.webp`,
     position: [-26, 36, -86],
     rotation: [0, Math.PI, 0],
     scale: [34, 34, 50],
@@ -134,7 +134,7 @@ const HERITAGE_DECALS: Decal[] = [
   {
     id: 'heritage-patch7',
     type: 'image',
-    url: `${BASE_URL}images/patch7_decal.png`,
+    url: `${BASE_URL}images/patch7_decal.webp`,
     position: [26, 36, -86],
     rotation: [0, Math.PI, 0],
     scale: [34, 34, 50],
@@ -146,7 +146,7 @@ const HERITAGE_DECALS: Decal[] = [
   {
     id: 'heritage-panda',
     type: 'image',
-    url: `${BASE_URL}images/panda_decal.png`,
+    url: `${BASE_URL}images/panda_decal.webp`,
     position: [-30, 18, 30],
     rotation: [0, 0, 0],
     scale: [22, 22, 40],
