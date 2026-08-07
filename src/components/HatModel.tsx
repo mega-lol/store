@@ -554,6 +554,14 @@ export default function HatModel({
         }
 
         const mat = original.clone();
+        // The snapback strap ("plastic") and button ("blinn1SG") ship baked
+        // white in the model. Hardware matches the colorway: black on black,
+        // white on white.
+        if (materialName === 'plastic' || materialName === 'blinn1SG') {
+          mat.color.set(hatColor);
+          (mat as THREE.MeshStandardMaterial).roughness = 0.45;
+          (mat as THREE.MeshStandardMaterial).metalness = 0.05;
+        }
         mat.transparent = false;
         mat.opacity = 1;
         mat.depthWrite = true;
