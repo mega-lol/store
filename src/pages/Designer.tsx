@@ -3,21 +3,25 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import HatScene from '@/components/HatScene';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/store/cartStore';
-import { Colorway, HAT_BLACK, HAT_PRICE, HAT_WHITE } from '@/types/hat';
+import { buildHat, Colorway, Finish, FINISHES, finishTint, HAT_PRICE } from '@/types/hat';
 
 export default function Designer() {
-  // ?preview freezes auto-rotation; ?colorway= and ?angle= (CAMERA_PRESETS index)
-  // give deterministic renders for visual regression captures.
+  // ?preview freezes auto-rotation; ?colorway=, ?finish= and ?angle=
+  // (CAMERA_PRESETS index) give deterministic renders for visual captures.
   const [params] = useSearchParams();
   const preview = params.has('preview');
   const angle = Number(params.get('angle') ?? '-1');
   const [colorway, setColorway] = useState<Colorway>(
     params.get('colorway') === 'white' ? 'white' : 'black',
   );
+  const [finish, setFinish] = useState<Finish>(() => {
+    const f = params.get('finish');
+    return f === 'rose' || f === 'tonal' ? f : 'gold';
+  });
   const navigate = useNavigate();
   const { addItem } = useCart();
 
-  const config = useMemo(() => (colorway === 'black' ? HAT_BLACK : HAT_WHITE), [colorway]);
+  const config = useMemo(() => buildHat(colorway, finish), [colorway, finish]);
 
   const handleAdd = () => {
     addItem(config);
@@ -78,11 +82,34 @@ export default function Designer() {
             </div>
           </div>
 
+          <div className="space-y-3">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">Embroidery</p>
+            <div className="grid grid-cols-3 gap-2">
+              {FINISHES.map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setFinish(key)}
+                  className={`h-14 rounded-xl border transition-colors text-[10px] uppercase tracking-[0.15em] font-bold flex flex-col items-center justify-center gap-1.5 ${
+                    finish === key
+                      ? 'border-white bg-white/10 text-white'
+                      : 'border-white/15 text-white/60 hover:border-white/30'
+                  }`}
+                >
+                  <span
+                    className="h-3.5 w-3.5 rounded-full border border-white/25"
+                    style={{ backgroundColor: finishTint(key, config.hatColor) }}
+                  />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <p className="text-[10px] uppercase tracking-[0.3em] text-white/40">Details</p>
             <ul className="text-sm text-white/65 space-y-1.5 leading-relaxed">
               <li>Premium ball cap</li>
-              <li>Gold embroidery — front</li>
+              <li>Gold, rose gold or tonal embroidery</li>
               <li>"Out, Out" inside label</li>
               <li>One size, structured fit</li>
             </ul>

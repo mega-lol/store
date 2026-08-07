@@ -167,6 +167,9 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
     >
       <meshStandardMaterial
         map={activeTexture}
+        // An image decal with a color is a tinted mask (white glyphs × thread
+        // color) — the one path every finish shares.
+        color={decal.type === 'image' && decal.color ? decal.color : '#ffffff'}
         bumpMap={bumpTexture}
         bumpScale={isGoldEmbroidery ? 4.5 : isEmbroidery ? 3.0 : 2.0}
         transparent

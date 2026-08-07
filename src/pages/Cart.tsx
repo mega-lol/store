@@ -127,7 +127,10 @@ export default function Cart() {
                 style={{ backgroundColor: item.hat.hatColor }}
               />
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">MEGA Hat — {item.hat.colorway === 'black' ? 'Black' : 'White'}</p>
+                <p className="font-medium truncate">
+                  MEGA Hat — {item.hat.colorway === 'black' ? 'Black' : 'White'}
+                  {item.hat.finish === 'rose' ? ' · Rose Gold' : item.hat.finish === 'tonal' ? ' · Tonal' : ' · Gold'}
+                </p>
                 <p className="text-xs text-muted-foreground">Size: {item.hat.size}</p>
               </div>
               <div className="flex items-center gap-2">

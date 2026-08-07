@@ -32,9 +32,28 @@ export type TextStyle = 'flat' | 'embroidery' | 'gold-embroidery' | 'puff-3d';
 
 export type Colorway = 'black' | 'white';
 
+/** Embroidery finish: metallic gold, metallic rose gold, or tonal thread
+ * matching the hat (black on black, white on white). */
+export type Finish = 'gold' | 'rose' | 'tonal';
+
+export const FINISHES: { key: Finish; label: string }[] = [
+  { key: 'gold', label: 'Gold' },
+  { key: 'rose', label: 'Rose Gold' },
+  { key: 'tonal', label: 'Tonal' },
+];
+
+/** Thread color per finish. Tonal sits one step off the base — the sheen
+ * difference is what makes real tone-on-tone embroidery readable. */
+export function finishTint(finish: Finish, hatColor: string): string {
+  if (finish === 'gold') return '#F5C800';
+  if (finish === 'rose') return '#D98E7E';
+  return hatColor === '#000000' ? '#242424' : '#E9E5DC';
+}
+
 export interface HatConfig {
   id: string;
   colorway: Colorway;
+  finish: Finish;
   hatColor: string;
   bandColor?: string;
   texture?: string;
@@ -73,34 +92,41 @@ const INSIDE_LABEL_DECAL: Decal = {
   style: 'flat',
 };
 
-const FRONT_TEXT_DECAL: Decal = {
-  id: 'front-mega-text',
-  type: 'image',
-  url: `${BASE_URL}images/mega_front_text.png`,
-  position: [0, 58, 85],
-  rotation: [0, 0, 0],
-  scale: [105, 50, 105],
-  normal: [0, 0.15, 1],
-  spin: 0,
-  zone: 'front',
-  style: 'gold-embroidery',
-};
-
-export function buildHat(colorway: Colorway): HatConfig {
-  const isBlack = colorway === 'black';
+/** Front text: one white-glyph asset, tinted per finish. Metallic finishes
+ * keep the gold-embroidery sheen; tonal reads as thread via plain embroidery. */
+function frontText(finish: Finish, hatColor: string): Decal {
   return {
-    id: `osage-${colorway}`,
+    id: 'front-mega-text',
+    type: 'image',
+    url: `${BASE_URL}images/front_text.png`,
+    color: finishTint(finish, hatColor),
+    position: [0, 58, 85],
+    rotation: [0, 0, 0],
+    scale: [105, 50, 105],
+    normal: [0, 0.15, 1],
+    spin: 0,
+    zone: 'front',
+    style: finish === 'tonal' ? 'embroidery' : 'gold-embroidery',
+  };
+}
+
+export function buildHat(colorway: Colorway, finish: Finish = 'gold'): HatConfig {
+  const isBlack = colorway === 'black';
+  const hatColor = isBlack ? '#000000' : '#FFFFFF';
+  return {
+    id: `osage-${colorway}-${finish}`,
     colorway,
-    hatColor: isBlack ? '#000000' : '#FFFFFF',
-    bandColor: isBlack ? '#000000' : '#FFFFFF',
+    finish,
+    hatColor,
+    bandColor: hatColor,
     text: '',
     backText: '',
     brimText: '',
     font: 'Vinegar',
-    textColor: '#FFD700',
-    textStyle: 'gold-embroidery',
+    textColor: finishTint(finish, hatColor),
+    textStyle: finish === 'tonal' ? 'embroidery' : 'gold-embroidery',
     size: 'M',
-    decals: [FRONT_TEXT_DECAL, INSIDE_LABEL_DECAL],
+    decals: [frontText(finish, hatColor), INSIDE_LABEL_DECAL],
   };
 }
 
