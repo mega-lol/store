@@ -4,6 +4,7 @@ import { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Decal } from '@/types/hat';
 import { toFontStack } from '@/lib/fonts';
+import { keepFacing } from '@/lib/decal';
 
 interface DecalLayerProps {
   decal: Decal;
@@ -147,6 +148,9 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
     : Math.max(0.03, Math.max(sizeX, sizeY) * 0.6);
   const decalScale: [number, number, number] = [sizeX, sizeY, projectionDepth];
 
+  // Only the skin facing the projector renders — no ghosts on the far side.
+  const cull = useMemo(() => keepFacing(decal.normal ?? [0, 0, 1]), [decal.normal]);
+
   // Style-aware material properties for embroidery look
   const isGoldEmbroidery = decal.style === 'gold-embroidery';
   const isEmbroidery = decal.style === 'embroidery' || isGoldEmbroidery;
@@ -166,6 +170,8 @@ export default function DecalLayer({ decal, targetMesh, isSelected, onClick }: D
       }}
     >
       <meshStandardMaterial
+        onBeforeCompile={cull}
+        customProgramCacheKey={() => (cull as { customProgramCacheKey?: string }).customProgramCacheKey ?? ''}
         map={activeTexture}
         // An image decal with a color is a tinted mask (white glyphs × thread
         // color) — the one path every finish shares.

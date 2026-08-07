@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { Canvas as FabricCanvas } from 'fabric';
 import { Decal as HatDecal, TextStyle } from '@/types/hat';
 import { toFontStack } from '@/lib/fonts';
+import { keepFacing } from '@/lib/decal';
 import DecalLayer from './DecalLayer';
 import FabricTextureLayer from './FabricTextureLayer';
 import useUvPointerBridge from '@/hooks/useUvPointerBridge';
@@ -243,6 +244,11 @@ function makeTextTexture(
 }
 
 /* Canvas arc/laurel helpers removed – using official goldleaf image assets */
+
+const cullFront = keepFacing([0, 0.15, 1]);
+const cullBack = keepFacing([0, 0, -1]);
+const cullBrim = keepFacing([0, 1, 0]);
+const cacheKey = (c: unknown) => () => (c as { customProgramCacheKey?: string }).customProgramCacheKey ?? '';
 
 function meshKey(name?: string, parentName?: string): string {
   return `${parentName || ''}::${name || ''}`;
@@ -728,6 +734,8 @@ export default function HatModel({
         {!useFabricTexture && mainCapDecalTarget && frontTexture && (
           <ProjectedDecal mesh={mainCapDecalTargetRef} position={frontTextPos} rotation={[-0.18, 0, 0]} scale={frontTextScale}>
             <meshStandardMaterial
+              onBeforeCompile={cullFront}
+              customProgramCacheKey={cacheKey(cullFront)}
               map={frontTexture}
               transparent
               alphaTest={0.08}
@@ -754,6 +762,8 @@ export default function HatModel({
             scale={backTextScale}
           >
             <meshStandardMaterial
+              onBeforeCompile={cullBack}
+              customProgramCacheKey={cacheKey(cullBack)}
               map={backTexture}
               transparent
               alphaTest={0.08}
@@ -780,6 +790,8 @@ export default function HatModel({
             scale={leafScale}
           >
             <meshStandardMaterial
+              onBeforeCompile={cullBrim}
+              customProgramCacheKey={cacheKey(cullBrim)}
               map={leafLeftTex}
               transparent
               alphaTest={0.06}
@@ -806,6 +818,8 @@ export default function HatModel({
             scale={leafScale}
           >
             <meshStandardMaterial
+              onBeforeCompile={cullBrim}
+              customProgramCacheKey={cacheKey(cullBrim)}
               map={leafRightTex}
               transparent
               alphaTest={0.06}
@@ -832,6 +846,8 @@ export default function HatModel({
             scale={[billSize.x * 0.50, (billSize.x * 0.50) / 4.59, Math.max(billSize.y * 0.45, 18)]}
           >
             <meshStandardMaterial
+              onBeforeCompile={cullBrim}
+              customProgramCacheKey={cacheKey(cullBrim)}
               map={khmerBrimTex}
               transparent
               alphaTest={0.02}
