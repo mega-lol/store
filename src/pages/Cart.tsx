@@ -71,7 +71,7 @@ export default function Cart() {
       window.location.href = session.checkoutUrl;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Checkout could not be started.';
-      const missingBackend = /404|403|forbidden|page not found/i.test(message);
+      const missingBackend = /404|403|forbidden|not allowed|page not found/i.test(message);
       const paymentsDisabled = /Payments are not configured|square is not configured/i.test(message);
 
       if (missingBackend || paymentsDisabled) {
