@@ -58,7 +58,7 @@ called from the commerce backend.
 `index.html` carries the Hanzo Insights tag:
 
 ```html
-<script defer src="https://api.hanzo.ai/v1/event.js" data-key="pk-…"></script>
+<script defer src="https://api.hanzo.ai/v1/event/tag.js" data-key="pk-…"></script>
 ```
 
 The key is injected at build time from `VITE_HANZO_PK`; with no key the tag is
